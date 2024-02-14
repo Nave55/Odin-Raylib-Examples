@@ -86,7 +86,7 @@ initGame :: proc() {
     fruit.active = false
 }
 
-// Update function which contains all game logic to update the game every fram.
+// Update function which contains all game logic to update the game every frame.
 updateGame :: proc() {
     if !gameOver {
         // Controls
