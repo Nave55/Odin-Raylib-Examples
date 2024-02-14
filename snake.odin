@@ -175,9 +175,7 @@ updateGame :: proc() {
 
 // Function to draw snake, fruit, and grid.
 drawGame :: proc() {
-    // Start Drawing
     rl.BeginDrawing()
-    // Defer EndDrawing.
     defer rl.EndDrawing()
 
         // Draw the background white
