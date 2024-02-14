@@ -155,8 +155,10 @@ updateGame :: proc() {
             }
 
             // Collisions with fruit
-            if ((snake[0].position[0] < (fruit.position[0] + fruit.size[0]) && (snake[0].position[0] + snake[0].size[0]) > fruit.position[0]) &&
-                (snake[0].position[1] < (fruit.position[1] + fruit.size[1]) && (snake[0].position[1] + snake[0].size[1]) > fruit.position[1])) {
+            if ((snake[0].position[0] < (fruit.position[0] + fruit.size[0]) && 
+               (snake[0].position[0] + snake[0].size[0]) > fruit.position[0]) &&
+               (snake[0].position[1] < (fruit.position[1] + fruit.size[1]) && 
+               (snake[0].position[1] + snake[0].size[1]) > fruit.position[1])) {
                 snake[counterTail].position = snakePosition[counterTail - 1]
                 counterTail += 1
                 fruit.active = false
