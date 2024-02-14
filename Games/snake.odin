@@ -1,5 +1,4 @@
 package Snake
-
 /*******************************************************************************************
 *
 *   raylib - classic game: snake
@@ -15,7 +14,6 @@ package Snake
 *   Copyright (c) 2024 Evan Martinez 
 *
 ********************************************************************************************/
-
 import rl "vendor:raylib"
 
 // Create All Variables and Structs
@@ -43,11 +41,11 @@ framesCounter := 0
 gameOver := false
 pause := false
 
-fruit :Food
-snake :[SNAKE_LENGTH]Snake 
-snakePosition : [SNAKE_LENGTH]rl.Vector2
+fruit: Food
+snake: [SNAKE_LENGTH]Snake 
+snakePosition: [SNAKE_LENGTH]rl.Vector2
 allowMove := false
-offset :rl.Vector2
+offset: rl.Vector2
 counterTail := 0
 
 // Main Function
@@ -69,11 +67,11 @@ initGame :: proc() {
     counterTail = 1
     allowMove = false
     
-    offset = {(f32)(SCREEN_WIDTH%SQUARE_SIZE), 
-              (f32)(SCREEN_HEIGHT%SQUARE_SIZE)}
+    offset = {(f32)(SCREEN_WIDTH % SQUARE_SIZE), 
+              (f32)(SCREEN_HEIGHT % SQUARE_SIZE)}
 
     for i in 0..<SNAKE_LENGTH {
-        snake[i].position = {offset[0]/2, offset[1]/2}
+        snake[i].position = {offset[0] / 2, offset[1] / 2}
         snake[i].size = {SQUARE_SIZE, SQUARE_SIZE}
         snake[i].speed = {SQUARE_SIZE, 0}
 
@@ -142,13 +140,13 @@ updateGame :: proc() {
             // Fruit positioning
             if (!fruit.active) {
                 fruit.active = true
-                fruit.position = {f32(rl.GetRandomValue(0,(SCREEN_WIDTH/SQUARE_SIZE) - 1)*SQUARE_SIZE) + offset[0]/2, 
-                                  f32(rl.GetRandomValue(0,(SCREEN_HEIGHT/SQUARE_SIZE) - 1)*SQUARE_SIZE) + offset[1]/2}
+                fruit.position = {f32(rl.GetRandomValue(0,(SCREEN_WIDTH / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset[0]/2, 
+                                  f32(rl.GetRandomValue(0,(SCREEN_HEIGHT / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset[1]/2}
 
                 for i in 0..< counterTail {
                     for (fruit.position[0] == snake[i].position[0]) && (fruit.position[1] == snake[i].position[1]) {
-                        fruit.position = {f32(rl.GetRandomValue(0, (SCREEN_WIDTH/SQUARE_SIZE) - 1)*SQUARE_SIZE) + offset[0]/2, 
-                                          f32(rl.GetRandomValue(0, (SCREEN_HEIGHT/SQUARE_SIZE) - 1)*SQUARE_SIZE) + offset[0]/2}
+                        fruit.position = {f32(rl.GetRandomValue(0, (SCREEN_WIDTH / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset[0]/2, 
+                                          f32(rl.GetRandomValue(0, (SCREEN_HEIGHT / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset[1]/2}
                         i := 0
                     }
                 }
@@ -156,9 +154,9 @@ updateGame :: proc() {
 
             // Collisions with fruit
             if ((snake[0].position[0] < (fruit.position[0] + fruit.size[0]) && 
-               (snake[0].position[0] + snake[0].size[0]) > fruit.position[0]) &&
-               (snake[0].position[1] < (fruit.position[1] + fruit.size[1]) && 
-               (snake[0].position[1] + snake[0].size[1]) > fruit.position[1])) {
+                (snake[0].position[0] + snake[0].size[0]) > fruit.position[0]) &&
+                (snake[0].position[1] < (fruit.position[1] + fruit.size[1]) && 
+                (snake[0].position[1] + snake[0].size[1]) > fruit.position[1])) {
                 snake[counterTail].position = snakePosition[counterTail - 1]
                 counterTail += 1
                 fruit.active = false
@@ -186,28 +184,27 @@ drawGame :: proc() {
         if !gameOver {
             // Draw grid lines
             for i in 0..<SCREEN_WIDTH/SQUARE_SIZE + 1 {
-                rl.DrawLineV({f32(SQUARE_SIZE*i) + offset[0]/2, offset[1]/2}, 
-                             {f32(SQUARE_SIZE*i) + offset[0]/2, SCREEN_HEIGHT - offset[1]/2}, rl.LIGHTGRAY)
+                rl.DrawLineV({f32(SQUARE_SIZE * i) + offset[0] / 2, offset[1] / 2}, 
+                             {f32(SQUARE_SIZE * i) + offset[0] / 2, SCREEN_HEIGHT - offset[1] / 2}, rl.LIGHTGRAY)
             }
 
             for i in 0..<SCREEN_HEIGHT/SQUARE_SIZE + 1 {
-                rl.DrawLineV({offset[0]/2, f32(SQUARE_SIZE*i) + offset[1]/2}, 
-                             {f32(SCREEN_WIDTH) - offset[0]/2, f32(SQUARE_SIZE*i) + offset[1]/2}, rl.LIGHTGRAY)
+                rl.DrawLineV({offset[0] / 2, f32(SQUARE_SIZE * i) + offset[1] / 2}, 
+                             {f32(SCREEN_WIDTH) - offset[0] / 2, f32(SQUARE_SIZE * i) + offset[1] / 2}, rl.LIGHTGRAY)
             }
 
             // Draw snake
             for i in 0..<counterTail do rl.DrawRectangleV(snake[i].position, snake[i].size, snake[i].color)
-
             // Draw fruit
             rl.DrawRectangleV(fruit.position, fruit.size, fruit.color)
 
             if pause do rl.DrawText("GAME PAUSED", 
-                        SCREEN_WIDTH/2 - rl.MeasureText("GAME PAUSED", 40)/2, 
-                        SCREEN_HEIGHT/2 - 40, 40, rl.GRAY)
+                        SCREEN_WIDTH / 2 - rl.MeasureText("GAME PAUSED", 40) / 2, 
+                        SCREEN_HEIGHT / 2 - 40, 40, rl.GRAY)
         }
         else do rl.DrawText("PRESS [ENTER] TO PLAY AGAIN", 
-        rl.GetScreenWidth()/2 - rl.MeasureText("PRESS [ENTER] TO PLAY AGAIN", 20)/2, 
-        rl.GetScreenHeight()/2 - 50, 20, rl.GRAY)
+        rl.GetScreenWidth() / 2 - rl.MeasureText("PRESS [ENTER] TO PLAY AGAIN", 20) / 2, 
+        rl.GetScreenHeight() / 2 - 50, 20, rl.GRAY)
 }
 
 updateDrawFrame :: proc() {
