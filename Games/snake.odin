@@ -185,12 +185,14 @@ drawGame :: proc() {
             // Draw grid lines
             for i in 0..<SCREEN_WIDTH/SQUARE_SIZE + 1 {
                 rl.DrawLineV({f32(SQUARE_SIZE * i) + offset[0] / 2, offset[1] / 2}, 
-                             {f32(SQUARE_SIZE * i) + offset[0] / 2, SCREEN_HEIGHT - offset[1] / 2}, rl.LIGHTGRAY)
+                             {f32(SQUARE_SIZE * i) + offset[0] / 2, SCREEN_HEIGHT - offset[1] / 2}, 
+                             rl.LIGHTGRAY)
             }
 
             for i in 0..<SCREEN_HEIGHT/SQUARE_SIZE + 1 {
                 rl.DrawLineV({offset[0] / 2, f32(SQUARE_SIZE * i) + offset[1] / 2}, 
-                             {f32(SCREEN_WIDTH) - offset[0] / 2, f32(SQUARE_SIZE * i) + offset[1] / 2}, rl.LIGHTGRAY)
+                             {f32(SCREEN_WIDTH) - offset[0] / 2, f32(SQUARE_SIZE * i) + offset[1] / 2}, 
+                             rl.LIGHTGRAY)
             }
 
             // Draw snake
@@ -200,11 +202,13 @@ drawGame :: proc() {
 
             if pause do rl.DrawText("GAME PAUSED", 
                         SCREEN_WIDTH / 2 - rl.MeasureText("GAME PAUSED", 40) / 2, 
-                        SCREEN_HEIGHT / 2 - 40, 40, rl.GRAY)
+                        SCREEN_HEIGHT / 2 - 40, 40, 
+                        rl.GRAY)
         }
         else do rl.DrawText("PRESS [ENTER] TO PLAY AGAIN", 
-        rl.GetScreenWidth() / 2 - rl.MeasureText("PRESS [ENTER] TO PLAY AGAIN", 20) / 2, 
-        rl.GetScreenHeight() / 2 - 50, 20, rl.GRAY)
+                rl.GetScreenWidth() / 2 - rl.MeasureText("PRESS [ENTER] TO PLAY AGAIN", 20) / 2, 
+                rl.GetScreenHeight() / 2 - 50, 20, 
+                rl.GRAY)
 }
 
 updateDrawFrame :: proc() {
