@@ -11,7 +11,7 @@ package Snake
 *  Translation from https://github.com/raysan5/raylib-games/blob/master/classics/src/snake.c to Odin
 *
 *   Copyright (c) 2015 Ramon Santamaria (@raysan5)
-*   Copyright (c) 2024 Evan Martinez 
+*   Copyright (c) 2024 Evan Martinez (@Nave55)
 *
 ********************************************************************************************/
 import rl "vendor:raylib"
