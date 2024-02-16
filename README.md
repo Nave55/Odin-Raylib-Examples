@@ -1,6 +1,6 @@
-# Odin-Games
+# Odin-Raylib
 
-Contains all the code that I have worked on in the process of learning Raylib and Odin.
+### Contains all the code that I have worked on in the process of learning Raylib and Odin.
 
 The Core folder contains ported code from https://github.com/raysan5/raylib/tree/master/examples/core
 
