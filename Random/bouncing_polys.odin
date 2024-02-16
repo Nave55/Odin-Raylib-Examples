@@ -1,13 +1,12 @@
-package shapes
+package poly
 
 import rl "vendor:raylib"
-import "core:fmt"
 
 // create all variables and data structures
 SCREEN_WIDTH :: 1280
 SCREEN_HEIGHT :: 720
 
-Rects :: struct {
+Poly :: struct {
     vel: rl.Vector2,
     center: rl.Vector2,
     side: i32,
@@ -16,7 +15,7 @@ Rects :: struct {
     color: rl.Color,
 }
 
-rect_array : [25]Rects
+poly_array : [25]Poly
 pause := false
 
 main :: proc() {
@@ -31,7 +30,7 @@ main :: proc() {
 }
 
 initGame :: proc() {
-    for i in &rect_array {
+    for i in &poly_array {
 
         // create poly values
         i.center = {f32(rl.GetRandomValue(100,1200)),f32(rl.GetRandomValue(100,650))}
@@ -52,7 +51,7 @@ updateGame :: proc() {
     if rl.IsKeyPressed(.P) do pause = !pause
 
     if !pause {
-        for i in &rect_array {
+        for i in &poly_array {
             // move entities by velocity and rotate them
             i.rotation += 2
             i.center += {i.vel.x, i.vel.y}
@@ -69,7 +68,7 @@ drawGame :: proc() {
     defer rl.EndDrawing()
 
     // draw polygons
-    for i in &rect_array {
+    for i in &poly_array {
         rl.DrawPoly(i.center, i.side, i.radius, i.rotation, i.color)
         rl.ClearBackground(rl.BLACK)
     }
