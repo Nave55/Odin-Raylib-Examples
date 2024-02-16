@@ -37,16 +37,16 @@ Food :: struct {
 SCREEN_WIDTH ::  800
 SCREEN_HEIGHT :: 450
 
-framesCounter := 0
-gameOver := false
+frames_counter := 0
+game_over := false
 pause := false
 
 fruit: Food
 snake: [SNAKE_LENGTH]Snake 
-snakePosition: [SNAKE_LENGTH]rl.Vector2
-allowMove := false
+snake_position: [SNAKE_LENGTH]rl.Vector2
+allow_move := false
 offset: rl.Vector2
-counterTail := 0
+counter_tail := 0
 
 // Main Function
 main :: proc() {
@@ -61,11 +61,11 @@ main :: proc() {
 
 // Init variables and game settings whem game starts or restarts
 initGame :: proc() {
-    framesCounter = 0
-    gameOver = false
+    frames_counter = 0
+    game_over = false
     pause = false
-    counterTail = 1
-    allowMove = false
+    counter_tail = 1
+    allow_move = false
     
     offset = {(f32)(SCREEN_WIDTH % SQUARE_SIZE), 
               (f32)(SCREEN_HEIGHT % SQUARE_SIZE)}
@@ -86,42 +86,42 @@ initGame :: proc() {
 
 // Update function which contains all game logic to update the game every frame.
 updateGame :: proc() {
-    if !gameOver {
+    if !game_over {
         // Controls
         if rl.IsKeyPressed(.P) do pause = !pause
 
         if !pause {
-            if rl.IsKeyPressed(.RIGHT) && (snake[0].speed.x == 0) && allowMove {
+            if rl.IsKeyPressed(.RIGHT) && (snake[0].speed.x == 0) && allow_move {
                 snake[0].speed = {SQUARE_SIZE, 0}
-                allowMove = false
+                allow_move = false
             }
 
-            if rl.IsKeyPressed(.LEFT) && (snake[0].speed.x == 0) && allowMove {
+            if rl.IsKeyPressed(.LEFT) && (snake[0].speed.x == 0) && allow_move {
                 snake[0].speed = {-SQUARE_SIZE, 0}
-                allowMove = false
+                allow_move = false
             }
 
-            if rl.IsKeyPressed(.UP) && (snake[0].speed.y == 0) && allowMove {
+            if rl.IsKeyPressed(.UP) && (snake[0].speed.y == 0) && allow_move {
                 snake[0].speed = {0, -SQUARE_SIZE}
-                allowMove = false
+                allow_move = false
             }
 
-            if rl.IsKeyPressed(.DOWN) && (snake[0].speed.y == 0) && allowMove {
+            if rl.IsKeyPressed(.DOWN) && (snake[0].speed.y == 0) && allow_move {
                 snake[0].speed = {0, SQUARE_SIZE}
-                allowMove = false
+                allow_move = false
             }
             
             // Snake Movement
-            for i in 0..<counterTail do snakePosition[i] = snake[i].position
+            for i in 0..<counter_tail do snake_position[i] = snake[i].position
             
-            if framesCounter % 5 == 0 {
-                for i in 0..<counterTail {
+            if frames_counter % 5 == 0 {
+                for i in 0..<counter_tail {
                     if i == 0 {
                         snake[0].position.x += snake[0].speed.x
                         snake[0].position.y += snake[0].speed.y
-                        allowMove = true
+                        allow_move = true
                     }
-                    else do snake[i].position = snakePosition[i-1]
+                    else do snake[i].position = snake_position[i-1]
                 }
             }
 
@@ -129,12 +129,12 @@ updateGame :: proc() {
             if (snake[0].position.x > (SCREEN_WIDTH - offset.x)) ||
             (snake[0].position.y > (SCREEN_HEIGHT - offset.y)) ||
             (snake[0].position.x < 0) || snake[0].position.y < 0 {
-                gameOver = true
+                game_over = true
             }
 
             // Collisions with oneself
-            for i in 1..<counterTail {
-                if (snake[0].position.x == snake[i].position.x) && (snake[0].position.y == snake[i].position.y) do gameOver = true
+            for i in 1..<counter_tail {
+                if (snake[0].position.x == snake[i].position.x) && (snake[0].position.y == snake[i].position.y) do game_over = true
             }
             
             // Fruit positioning
@@ -143,7 +143,7 @@ updateGame :: proc() {
                 fruit.position = {f32(rl.GetRandomValue(0,(SCREEN_WIDTH / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset.x/2, 
                                   f32(rl.GetRandomValue(0,(SCREEN_HEIGHT / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset.y/2}
 
-                for i in 0..< counterTail {
+                for i in 0..< counter_tail {
                     for (fruit.position.x == snake[i].position.x) && (fruit.position.y == snake[i].position.y) {
                         fruit.position = {f32(rl.GetRandomValue(0, (SCREEN_WIDTH / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset.x/2, 
                                           f32(rl.GetRandomValue(0, (SCREEN_HEIGHT / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset.y/2}
@@ -157,18 +157,18 @@ updateGame :: proc() {
                 (snake[0].position.x + snake[0].size.x) > fruit.position.x) &&
                 (snake[0].position.y < (fruit.position.y + fruit.size.y) && 
                 (snake[0].position.y + snake[0].size.y) > fruit.position.y)) {
-                snake[counterTail].position = snakePosition[counterTail - 1]
-                counterTail += 1
+                snake[counter_tail].position = snake_position[counter_tail - 1]
+                counter_tail += 1
                 fruit.active = false
             }
 
-            framesCounter += 1
+            frames_counter += 1
         }
     }
     else {
         if rl.IsKeyPressed(.ENTER) {
             initGame()
-            gameOver = false
+            game_over = false
         }
     } 
 }
@@ -181,7 +181,7 @@ drawGame :: proc() {
         // Draw the background white
         rl.ClearBackground(rl.RAYWHITE)
 
-        if !gameOver {
+        if !game_over {
             // Draw grid lines
             for i in 0..<SCREEN_WIDTH/SQUARE_SIZE + 1 {
                 rl.DrawLineV({f32(SQUARE_SIZE * i) + offset.x / 2, offset.y / 2}, 
@@ -196,7 +196,7 @@ drawGame :: proc() {
             }
 
             // Draw snake
-            for i in 0..<counterTail do rl.DrawRectangleV(snake[i].position, snake[i].size, snake[i].color)
+            for i in 0..<counter_tail do rl.DrawRectangleV(snake[i].position, snake[i].size, snake[i].color)
             // Draw fruit
             rl.DrawRectangleV(fruit.position, fruit.size, fruit.color)
 
