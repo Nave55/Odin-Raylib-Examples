@@ -34,7 +34,7 @@ Food :: struct {
     color: rl.Color,
 }
 
-SCREEN_WIDTH :: 800
+SCREEN_WIDTH ::  800
 SCREEN_HEIGHT :: 450
 
 framesCounter := 0
@@ -71,7 +71,7 @@ initGame :: proc() {
               (f32)(SCREEN_HEIGHT % SQUARE_SIZE)}
 
     for i in 0..<SNAKE_LENGTH {
-        snake[i].position = {offset[0] / 2, offset[1] / 2}
+        snake[i].position = {offset.x / 2, offset.y / 2}
         snake[i].size = {SQUARE_SIZE, SQUARE_SIZE}
         snake[i].speed = {SQUARE_SIZE, 0}
 
@@ -91,22 +91,22 @@ updateGame :: proc() {
         if rl.IsKeyPressed(.P) do pause = !pause
 
         if !pause {
-            if rl.IsKeyPressed(.RIGHT) && (snake[0].speed[0] == 0) && allowMove {
+            if rl.IsKeyPressed(.RIGHT) && (snake[0].speed.x == 0) && allowMove {
                 snake[0].speed = {SQUARE_SIZE, 0}
                 allowMove = false
             }
 
-            if rl.IsKeyPressed(.LEFT) && (snake[0].speed[0] == 0) && allowMove {
+            if rl.IsKeyPressed(.LEFT) && (snake[0].speed.x == 0) && allowMove {
                 snake[0].speed = {-SQUARE_SIZE, 0}
                 allowMove = false
             }
 
-            if rl.IsKeyPressed(.UP) && (snake[0].speed[1] == 0) && allowMove {
+            if rl.IsKeyPressed(.UP) && (snake[0].speed.y == 0) && allowMove {
                 snake[0].speed = {0, -SQUARE_SIZE}
                 allowMove = false
             }
 
-            if rl.IsKeyPressed(.DOWN) && (snake[0].speed[1] == 0) && allowMove {
+            if rl.IsKeyPressed(.DOWN) && (snake[0].speed.y == 0) && allowMove {
                 snake[0].speed = {0, SQUARE_SIZE}
                 allowMove = false
             }
@@ -117,8 +117,8 @@ updateGame :: proc() {
             if framesCounter % 5 == 0 {
                 for i in 0..<counterTail {
                     if i == 0 {
-                        snake[0].position[0] += snake[0].speed[0]
-                        snake[0].position[1] += snake[0].speed[1]
+                        snake[0].position.x += snake[0].speed.x
+                        snake[0].position.y += snake[0].speed.y
                         allowMove = true
                     }
                     else do snake[i].position = snakePosition[i-1]
@@ -126,37 +126,37 @@ updateGame :: proc() {
             }
 
             // Collisions with wall
-            if (snake[0].position[0] > (SCREEN_WIDTH - offset[0])) ||
-            (snake[0].position[1] > (SCREEN_HEIGHT - offset[1])) ||
-            (snake[0].position[0] < 0) || snake[0].position[1] < 0 {
+            if (snake[0].position.x > (SCREEN_WIDTH - offset.x)) ||
+            (snake[0].position.y > (SCREEN_HEIGHT - offset.y)) ||
+            (snake[0].position.x < 0) || snake[0].position.y < 0 {
                 gameOver = true
             }
 
             // Collisions with oneself
             for i in 1..<counterTail {
-                if (snake[0].position[0] == snake[i].position[0]) && (snake[0].position[1] == snake[i].position[1]) do gameOver = true
+                if (snake[0].position.x == snake[i].position.x) && (snake[0].position.y == snake[i].position.y) do gameOver = true
             }
             
             // Fruit positioning
             if (!fruit.active) {
                 fruit.active = true
-                fruit.position = {f32(rl.GetRandomValue(0,(SCREEN_WIDTH / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset[0]/2, 
-                                  f32(rl.GetRandomValue(0,(SCREEN_HEIGHT / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset[1]/2}
+                fruit.position = {f32(rl.GetRandomValue(0,(SCREEN_WIDTH / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset.x/2, 
+                                  f32(rl.GetRandomValue(0,(SCREEN_HEIGHT / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset.y/2}
 
                 for i in 0..< counterTail {
-                    for (fruit.position[0] == snake[i].position[0]) && (fruit.position[1] == snake[i].position[1]) {
-                        fruit.position = {f32(rl.GetRandomValue(0, (SCREEN_WIDTH / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset[0]/2, 
-                                          f32(rl.GetRandomValue(0, (SCREEN_HEIGHT / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset[1]/2}
+                    for (fruit.position.x == snake[i].position.x) && (fruit.position.y == snake[i].position.y) {
+                        fruit.position = {f32(rl.GetRandomValue(0, (SCREEN_WIDTH / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset.x/2, 
+                                          f32(rl.GetRandomValue(0, (SCREEN_HEIGHT / SQUARE_SIZE) - 1) * SQUARE_SIZE) + offset.y/2}
                         i := 0
                     }
                 }
             }
 
             // Collisions with fruit
-            if ((snake[0].position[0] < (fruit.position[0] + fruit.size[0]) && 
-                (snake[0].position[0] + snake[0].size[0]) > fruit.position[0]) &&
-                (snake[0].position[1] < (fruit.position[1] + fruit.size[1]) && 
-                (snake[0].position[1] + snake[0].size[1]) > fruit.position[1])) {
+            if ((snake[0].position.x < (fruit.position.x + fruit.size.x) && 
+                (snake[0].position.x + snake[0].size.x) > fruit.position.x) &&
+                (snake[0].position.y < (fruit.position.y + fruit.size.y) && 
+                (snake[0].position.y + snake[0].size.y) > fruit.position.y)) {
                 snake[counterTail].position = snakePosition[counterTail - 1]
                 counterTail += 1
                 fruit.active = false
@@ -184,14 +184,14 @@ drawGame :: proc() {
         if !gameOver {
             // Draw grid lines
             for i in 0..<SCREEN_WIDTH/SQUARE_SIZE + 1 {
-                rl.DrawLineV({f32(SQUARE_SIZE * i) + offset[0] / 2, offset[1] / 2}, 
-                             {f32(SQUARE_SIZE * i) + offset[0] / 2, SCREEN_HEIGHT - offset[1] / 2}, 
+                rl.DrawLineV({f32(SQUARE_SIZE * i) + offset.x / 2, offset.y / 2}, 
+                             {f32(SQUARE_SIZE * i) + offset.x / 2, SCREEN_HEIGHT - offset.y / 2}, 
                              rl.LIGHTGRAY)
             }
 
             for i in 0..<SCREEN_HEIGHT/SQUARE_SIZE + 1 {
-                rl.DrawLineV({offset[0] / 2, f32(SQUARE_SIZE * i) + offset[1] / 2}, 
-                             {f32(SCREEN_WIDTH) - offset[0] / 2, f32(SQUARE_SIZE * i) + offset[1] / 2}, 
+                rl.DrawLineV({offset.x / 2, f32(SQUARE_SIZE * i) + offset.y / 2}, 
+                             {f32(SCREEN_WIDTH) - offset.x / 2, f32(SQUARE_SIZE * i) + offset.y / 2}, 
                              rl.LIGHTGRAY)
             }
 
