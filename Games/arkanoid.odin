@@ -51,8 +51,8 @@ brickSize: rl.Vector2
 
 main :: proc() {
     rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "classic game: arkanoid")
-    rl.SetTargetFPS(60)
     defer rl.CloseWindow()
+    rl.SetTargetFPS(60)
     initGame()
     
     for !rl.WindowShouldClose() do updateDrawFrame()
