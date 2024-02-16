@@ -8,6 +8,8 @@ package arkanoid
 *   This game has been created using raylib v1.3 (www.raylib.com)
 *   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)
 *
+*   Translation from https://github.com/raysan5/raylib-games/blob/master/classics/src/arkanoid.c to Odin
+*
 *   Copyright (c) 2015 Ramon Santamaria (@raysan5)
 *   Copyright (c) 2024 Evan Martinez (@Nave55)
 *
@@ -80,7 +82,6 @@ initGame :: proc() {
             brick[i][j].active = true
         }
     }
-
 }
 
 updateGame :: proc() {
