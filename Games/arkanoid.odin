@@ -41,13 +41,13 @@ Brick :: struct{
 SCREEN_WIDTH :: 800
 SCREEN_HEIGHT :: 450
 
-gameOver := false
+game_over := false
 pause := false
 
 player: Player
 ball: Ball
 brick: [LINES_OF_BRICKS][BRICKS_PER_LINE]Brick
-brickSize: rl.Vector2
+brick_size: rl.Vector2
 
 main :: proc() {
     rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "classic game: arkanoid")
@@ -59,7 +59,7 @@ main :: proc() {
 }
 
 initGame :: proc() {
-    brickSize = {f32(rl.GetScreenWidth() / BRICKS_PER_LINE), 40}
+    brick_size = {f32(rl.GetScreenWidth() / BRICKS_PER_LINE), 40}
 
     // Initialize player
     player.position = {f32(SCREEN_WIDTH / 2), f32(SCREEN_HEIGHT * 7 / 8)}
@@ -73,19 +73,19 @@ initGame :: proc() {
     ball.active = false
 
     // Initialize bricks
-    initialDownPosition :f32 = 50
+    initial_down_position :f32 = 50
 
     for i in 0..<LINES_OF_BRICKS {
         for j in 0..<BRICKS_PER_LINE {
-            brick[i][j].position = {f32(j) * brickSize.x + brickSize.x / 2, 
-                                    f32(i) * brickSize.y + initialDownPosition}
+            brick[i][j].position = {f32(j) * brick_size.x + brick_size.x / 2, 
+                                    f32(i) * brick_size.y + initial_down_position}
             brick[i][j].active = true
         }
     }
 }
 
 updateGame :: proc() {
-    if (!gameOver) {
+    if (!game_over) {
         if rl.IsKeyPressed(.P) do pause = !pause
 
         if !pause {
@@ -138,27 +138,27 @@ updateGame :: proc() {
                 for j in 0..<BRICKS_PER_LINE {
                     if (brick[i][j].active) {
                         // Hit below
-                        if ((ball.position.y - ball.radius) <= (brick[i][j].position.y + brickSize.y / 2)) &&
-                            ((ball.position.y - ball.radius) > (brick[i][j].position.y + brickSize.y / 2 + ball.speed.y)) &&
-                            ((abs(ball.position.x - brick[i][j].position.x)) < (brickSize.x / 2 + ball.radius * 2 / 3)) && (ball.speed.y < 0) {
+                        if ((ball.position.y - ball.radius) <= (brick[i][j].position.y + brick_size.y / 2)) &&
+                            ((ball.position.y - ball.radius) > (brick[i][j].position.y + brick_size.y / 2 + ball.speed.y)) &&
+                            ((abs(ball.position.x - brick[i][j].position.x)) < (brick_size.x / 2 + ball.radius * 2 / 3)) && (ball.speed.y < 0) {
                             brick[i][j].active = false
                             ball.speed.y *= -1
                         }
-                        else if ((ball.position.y + ball.radius) >= (brick[i][j].position.y - brickSize.y / 2)) &&
-                                ((ball.position.y + ball.radius) < (brick[i][j].position.y - brickSize.y / 2 + ball.speed.y)) &&
-                                ((abs(ball.position.x - brick[i][j].position.x)) < (brickSize.x / 2 + ball.radius * 2 / 3)) && (ball.speed.y > 0) {
+                        else if ((ball.position.y + ball.radius) >= (brick[i][j].position.y - brick_size.y / 2)) &&
+                                ((ball.position.y + ball.radius) < (brick[i][j].position.y - brick_size.y / 2 + ball.speed.y)) &&
+                                ((abs(ball.position.x - brick[i][j].position.x)) < (brick_size.x / 2 + ball.radius * 2 / 3)) && (ball.speed.y > 0) {
                             brick[i][j].active = false
                             ball.speed.y *= -1
                         }
-                        else if ((ball.position.x + ball.radius) >= (brick[i][j].position.x - brickSize.x / 2)) &&
-                                ((ball.position.x + ball.radius) < (brick[i][j].position.x - brickSize.x / 2 + ball.speed.x)) &&
-                                ((abs(ball.position.y - brick[i][j].position.y)) < (brickSize.y/2 + ball.radius * 2 / 3)) && (ball.speed.x > 0) {
+                        else if ((ball.position.x + ball.radius) >= (brick[i][j].position.x - brick_size.x / 2)) &&
+                                ((ball.position.x + ball.radius) < (brick[i][j].position.x - brick_size.x / 2 + ball.speed.x)) &&
+                                ((abs(ball.position.y - brick[i][j].position.y)) < (brick_size.y/2 + ball.radius * 2 / 3)) && (ball.speed.x > 0) {
                             brick[i][j].active = false
                             ball.speed.x *= -1
                         }
-                        else if ((ball.position.x - ball.radius) <= (brick[i][j].position.x + brickSize.x / 2)) &&
-                                ((ball.position.x - ball.radius) > (brick[i][j].position.x + brickSize.x / 2 + ball.speed.x)) &&
-                                ((abs(ball.position.y - brick[i][j].position.y)) < (brickSize.y / 2 + ball.radius * 2 / 3)) && (ball.speed.x < 0) {
+                        else if ((ball.position.x - ball.radius) <= (brick[i][j].position.x + brick_size.x / 2)) &&
+                                ((ball.position.x - ball.radius) > (brick[i][j].position.x + brick_size.x / 2 + ball.speed.x)) &&
+                                ((abs(ball.position.y - brick[i][j].position.y)) < (brick_size.y / 2 + ball.radius * 2 / 3)) && (ball.speed.x < 0) {
                             brick[i][j].active = false
                             ball.speed.x *= -1
                         }
@@ -167,12 +167,12 @@ updateGame :: proc() {
             }
 
             // Game over logic
-            if player.life <= 0 do gameOver = true
+            if player.life <= 0 do game_over = true
             else {
-                gameOver = true
+                game_over = true
                 for i in 0..<LINES_OF_BRICKS {
                     for j in 0..<BRICKS_PER_LINE {
-                        if brick[i][j].active do gameOver = false
+                        if brick[i][j].active do game_over = false
                     }
                 }
             }
@@ -181,7 +181,7 @@ updateGame :: proc() {
     else {
         if rl.IsKeyPressed(.ENTER) {
             initGame()
-            gameOver = false
+            game_over = false
         }
     }
 }
@@ -191,7 +191,7 @@ drawGame :: proc() {
     rl.ClearBackground(rl.RAYWHITE)
     defer rl.EndDrawing()
 
-    if (!gameOver) {
+    if (!game_over) {
             // Draw player bar
             rl.DrawRectangle(i32(player.position.x) - i32(player.size.x / 2), 
                              i32(player.position.y) - i32(player.size.y / 2), 
@@ -213,15 +213,15 @@ drawGame :: proc() {
             for i in 0..<LINES_OF_BRICKS {
                 for j in 0..<BRICKS_PER_LINE {
                     if brick[i][j].active  {
-                        if (i + j) % 2 == 0 do rl.DrawRectangle(i32(brick[i][j].position.x - brickSize.x / 2), 
-                                                                i32(brick[i][j].position.y - brickSize.y / 2), 
-                                                                i32(brickSize.x), 
-                                                                i32(brickSize.y), 
+                        if (i + j) % 2 == 0 do rl.DrawRectangle(i32(brick[i][j].position.x - brick_size.x / 2), 
+                                                                i32(brick[i][j].position.y - brick_size.y / 2), 
+                                                                i32(brick_size.x), 
+                                                                i32(brick_size.y), 
                                                                 rl.GRAY)
-                        else do rl.DrawRectangle(i32(brick[i][j].position.x - brickSize.x / 2), 
-                                                 i32(brick[i][j].position.y - brickSize.y / 2), 
-                                                 i32(brickSize.x), 
-                                                 i32(brickSize.y), 
+                        else do rl.DrawRectangle(i32(brick[i][j].position.x - brick_size.x / 2), 
+                                                 i32(brick[i][j].position.y - brick_size.y / 2), 
+                                                 i32(brick_size.x), 
+                                                 i32(brick_size.y), 
                                                  rl.DARKGRAY)
                     }
                 }
