@@ -1,4 +1,4 @@
-package arkanoid
+package main
 /*******************************************************************************************
 *
 *   raylib - classic game: arkanoid
