@@ -1,4 +1,4 @@
-package bouncing
+package main
 
 import rl "vendor:raylib"
 
@@ -67,10 +67,10 @@ drawGame :: proc() {
     // draw all object and clear screen
     rl.BeginDrawing()
     defer rl.EndDrawing()
+    rl.ClearBackground(rl.BLACK)
 
     for i in rect_array {
         rl.DrawRectanglePro(i.rect, {0,0}, i.rotation, i.color)
-        rl.ClearBackground(rl.BLACK)
     }
 
     // pause label
