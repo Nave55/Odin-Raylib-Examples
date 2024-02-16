@@ -30,17 +30,16 @@ main :: proc() {
 initGame :: proc() {
     for i in &rect_array {
         // set Rectangle to random values
-        i.rect.x = f32(rl.GetRandomValue(50,1200))
-        i.rect.y = f32(rl.GetRandomValue(50,650))
+        i.rect.x = f32(rl.GetRandomValue(0,1200))
+        i.rect.y = f32(rl.GetRandomValue(0,650))
         i.rect.width = f32(rl.GetRandomValue(20,60))
         i.rect.height = f32(rl.GetRandomValue(20, 60))
 
         // set velocity to random values
-        neg := [2]i32{rl.GetRandomValue(0,1), rl.GetRandomValue(0,1)}
-        if neg[0] == 0 do neg[0] = -1
-        if neg[1] == 0 do neg[1] = -1
-        i.vel[0] = f32(rl.GetRandomValue(1,5) * neg[0])
-        i.vel[1] = f32(rl.GetRandomValue(1,5) * neg[1])
+        neg: rl.Vector2 = {f32(rl.GetRandomValue(0,1)), f32(rl.GetRandomValue(0,1))}
+        if neg.x == 0 do neg.x = -1
+        if neg.y == 0 do neg.y = -1
+        i.vel = {f32(rl.GetRandomValue(1,5)), f32(rl.GetRandomValue(1,5))} * neg
 
         // set color to random values
         i.color = {u8(rl.GetRandomValue(0,255)), u8(rl.GetRandomValue(0,255)), u8(rl.GetRandomValue(0,255)), u8(255)}
@@ -54,12 +53,12 @@ updateGame :: proc() {
     if !pause {
         for i in &rect_array {
             // move entities by velocity
-            i.rect.x += i.vel[0]
-            i.rect.y += i.vel[1]
+            i.rect.x += i.vel.x
+            i.rect.y += i.vel.y
             
             // reverse velocity if entity collides with a walll
-            if  i.rect.x <= 0 || i.rect.x + i.rect.width >= SCREEN_WIDTH do i.vel[0] *= -1
-            if  i.rect.y <= 0 || i.rect.y + i.rect.height >= SCREEN_HEIGHT do i.vel[1] *= -1
+            if  i.rect.x <= 0 || i.rect.x + i.rect.width >= SCREEN_WIDTH do i.vel.x *= -1
+            if  i.rect.y <= 0 || i.rect.y + i.rect.height >= SCREEN_HEIGHT do i.vel.y *= -1
         }
     }
 }
@@ -74,6 +73,7 @@ drawGame :: proc() {
         rl.ClearBackground(rl.BLACK)
     }
 
+    // pause label
     if pause do rl.DrawText("GAME PAUSED", 
                             SCREEN_WIDTH / 2 - rl.MeasureText("GAME PAUSED", 40) / 2, 
                             SCREEN_HEIGHT / 2 - 40, 40, 
