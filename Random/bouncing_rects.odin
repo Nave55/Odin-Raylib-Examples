@@ -1,7 +1,6 @@
 package bouncing
 
 import rl "vendor:raylib"
-import "core:fmt"
 
 // create all variables and data structures
 SCREEN_WIDTH :: 1280
