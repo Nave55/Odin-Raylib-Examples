@@ -1,4 +1,4 @@
-package poly
+package main
 
 import rl "vendor:raylib"
 
@@ -66,11 +66,11 @@ updateGame :: proc() {
 drawGame :: proc() {
     rl.BeginDrawing()
     defer rl.EndDrawing()
+    rl.ClearBackground(rl.BLACK)
 
     // draw polygons
     for i in &poly_array {
         rl.DrawPoly(i.center, i.side, i.radius, i.rotation, i.color)
-        rl.ClearBackground(rl.BLACK)
     }
 
     // pause label
@@ -78,7 +78,7 @@ drawGame :: proc() {
                             SCREEN_WIDTH / 2 - rl.MeasureText("GAME PAUSED", 40) / 2, 
                             SCREEN_HEIGHT / 2 - 40, 40, 
                             rl.WHITE)
-}
+                        }
 
 // call all functions that you need on a by frame basis
 updateAll :: proc() {
