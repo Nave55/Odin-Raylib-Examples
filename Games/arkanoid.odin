@@ -152,7 +152,7 @@ updateGame :: proc() {
                         }
                         else if ((ball.position.x + ball.radius) >= (brick[i][j].position.x - brick_size.x / 2)) &&
                                 ((ball.position.x + ball.radius) < (brick[i][j].position.x - brick_size.x / 2 + ball.speed.x)) &&
-                                ((abs(ball.position.y - brick[i][j].position.y)) < (brick_size.y/2 + ball.radius * 2 / 3)) && (ball.speed.x > 0) {
+                                ((abs(ball.position.y - brick[i][j].position.y)) < (brick_size.y / 2 + ball.radius * 2 / 3)) && (ball.speed.x > 0) {
                             brick[i][j].active = false
                             ball.speed.x *= -1
                         }
