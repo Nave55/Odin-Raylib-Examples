@@ -1,4 +1,4 @@
-package main
+package poly
 
 import rl "vendor:raylib"
 
@@ -15,7 +15,7 @@ Poly :: struct {
     color: rl.Color,
 }
 
-poly_array : [25]Poly
+poly_array: [30]Poly
 pause := false
 
 main :: proc() {
@@ -78,8 +78,8 @@ drawGame :: proc() {
                             SCREEN_WIDTH / 2 - rl.MeasureText("GAME PAUSED", 40) / 2, 
                             SCREEN_HEIGHT / 2 - 40, 40, 
                             rl.WHITE)
-                        }
-
+    rl.DrawFPS(0,0)
+}
 // call all functions that you need on a by frame basis
 updateAll :: proc() {
     updateGame()
