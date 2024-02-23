@@ -25,7 +25,7 @@ Ball :: struct {
 
 paddle_one, paddle_two: Paddle
 ball: Ball
-paused := false
+paused := true
 score, score_2: int
 
 main :: proc() {
@@ -141,8 +141,8 @@ drawGame :: proc() {
                   ball.radius,
                   ball.color)
 
-    if paused do rl.DrawText("GAME PAUSED", 
-                            SCREEN_WIDTH / 2 - rl.MeasureText("GAME PAUSED", 40) / 2, 
+    if paused do rl.DrawText("GAME PAUSED SPACE TO CONTINUE", 
+                            SCREEN_WIDTH / 2 - rl.MeasureText("GAME PAUSED SPACE TO CONTINUE", 40) / 2, 
                             SCREEN_HEIGHT / 2 - 50, 
                             40, 
                             rl.RED)
