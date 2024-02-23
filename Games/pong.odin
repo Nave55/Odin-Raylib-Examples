@@ -1,8 +1,6 @@
 package pong
 
 import rl "vendor:raylib"
-import "core:strconv"
-import "core:strings"
 import "core:math/rand"
 
 SCREEN_WIDTH :: 1280
