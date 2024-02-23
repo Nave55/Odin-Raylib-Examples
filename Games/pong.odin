@@ -149,10 +149,17 @@ drawGame :: proc() {
                             40, 
                             rl.RED)
     
-    str_score := intToCString("Player: ", score); defer delete(str_score);
-    str_score_2 := intToCString("AI: ", score_2); defer delete(str_score_2);
-    rl.DrawText(str_score, 0, 0, 40, rl.RED)
-    rl.DrawText(str_score_2, SCREEN_WIDTH - rl.MeasureText(str_score_2, 40), 0, 40, rl.RED)
+    rl.DrawText(rl.TextFormat("Player: %v", score), 
+                0, 
+                0, 
+                40, 
+                rl.RED)
+
+    rl.DrawText(rl.TextFormat("Computer: %v", score_2), 
+                SCREEN_WIDTH - rl.MeasureText(rl.TextFormat("Computer: %v", score_2), 40), 
+                0, 
+                40, 
+                rl.RED)
 }
 
 updateGame :: proc() {
@@ -160,9 +167,4 @@ updateGame :: proc() {
     controls()
     movement()
     drawGame()
-}
-
-intToCString :: proc(str: string, num: int) -> cstring {
-    buf: [4]byte;
-    return strings.clone_to_cstring(strings.concatenate({str, strconv.itoa(buf[:], num)}))
 }
