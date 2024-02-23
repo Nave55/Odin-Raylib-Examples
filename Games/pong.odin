@@ -67,7 +67,7 @@ controls :: proc() {
         if paddle_one.y > 0 && rl.IsKeyDown(.UP) do paddle_one.y -= 10
         if paddle_one.y + paddle_one.height < SCREEN_HEIGHT && rl.IsKeyDown(.DOWN) do paddle_one.y += 10
     }
-    
+
     if rl.IsKeyPressed(.SPACE) do paused = !paused
 }
 
@@ -138,8 +138,8 @@ drawGame :: proc() {
                   ball.radius,
                   ball.color)
 
-    if paused do rl.DrawText("GAME PAUSED SPACE TO CONTINUE", 
-                            SCREEN_WIDTH / 2 - rl.MeasureText("GAME PAUSED SPACE TO CONTINUE", 40) / 2, 
+    if paused do rl.DrawText("PRESS SPACE TO CONTINUE", 
+                            SCREEN_WIDTH / 2 - rl.MeasureText("PRESS SPACE TO CONTINUE", 40) / 2, 
                             SCREEN_HEIGHT / 2 - 50, 
                             40, 
                             rl.RED)
