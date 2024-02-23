@@ -64,17 +64,14 @@ initGame :: proc() {
 
 controls :: proc() {
     if !paused {
-        if paddle_one.y > 0 {
-        if rl.IsKeyDown(.UP) do paddle_one.y -= 10
-        }
-        if paddle_one.y + paddle_one.height < SCREEN_HEIGHT {
-            if rl.IsKeyDown(.DOWN) do paddle_one.y += 10
-        }
+        if paddle_one.y > 0 && rl.IsKeyDown(.UP) do paddle_one.y -= 10
+        if paddle_one.y + paddle_one.height < SCREEN_HEIGHT && rl.IsKeyDown(.DOWN) do paddle_one.y += 10
     }
+    
     if rl.IsKeyPressed(.SPACE) do paused = !paused
 }
 
-cpuAI :: proc() {
+ai :: proc() {
     if !paused {
         for i32(ball.y) > paddle_two.y && paddle_two.y + paddle_two.height < SCREEN_HEIGHT do paddle_two.y += 10
         for i32(ball.y) < paddle_two.y && paddle_two.y > 0 do paddle_two.y -= 10
@@ -161,7 +158,7 @@ drawGame :: proc() {
 }
 
 updateGame :: proc() {
-    cpuAI()
+    ai()
     controls()
     movement()
     drawGame()
