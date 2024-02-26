@@ -9,8 +9,9 @@ package main
 *   Example licensed under an unmodified zlib/libpng license, which is an OSI-certified,
 *   BSD-like license that allows static linking with closed source software
 *
+*   Translation to Odin by Evan Martinez (@Nave55)
+*
 *   Copyright (c) 2022-2024 Jeffery Myers (@JeffM2501)
-*   Copyright (c) 2024 Evan Martinez
 *
 ********************************************************************************************/
 
