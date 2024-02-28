@@ -13,8 +13,7 @@ Paddle :: struct {
 }
 
 Ball :: struct {
-    x: f32,
-    y: f32,
+    pos: rl.Vector2,
     radius: f32,
     color: rl.Color,
     vel: rl.Vector2
@@ -46,8 +45,7 @@ initGame :: proc() {
     paddle_two = paddle_one
     paddle_two.rect.x = SCREEN_WIDTH - 35
 
-    ball = {SCREEN_WIDTH / 2, 
-            SCREEN_HEIGHT / 2, 
+    ball = {{SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0}, 
             20,  
             rl.WHITE,
             {rand.choice([]f32 {-12, 12}), rand.choice([]f32 {-12, 12})}}
@@ -66,8 +64,8 @@ controls :: proc() {
 // basic ai logic
 ai :: proc() {
     if !paused {
-        for ball.y > paddle_two.rect.y && paddle_two.rect.y + paddle_two.rect.height < SCREEN_HEIGHT do paddle_two.rect.y += 10
-        for ball.y < paddle_two.rect.y && paddle_two.rect.y > 0 do paddle_two.rect.y -= 10
+        for ball.pos.y > paddle_two.rect.y && paddle_two.rect.y + paddle_two.rect.height < SCREEN_HEIGHT do paddle_two.rect.y += 10
+        for ball.pos.y < paddle_two.rect.y && paddle_two.rect.y > 0 do paddle_two.rect.y -= 10
     }
 }
 
@@ -75,30 +73,29 @@ ai :: proc() {
 movement :: proc() {
     if !paused {
         // update ball position
-        ball.x += ball.vel.x
-        ball.y += ball.vel.y
+        ball.pos += ball.vel
 
-        // update score
-        if ball.x + ball.radius >= SCREEN_WIDTH do score_1 += 1 
-        if ball.x - ball.radius <= 0 do score_2 += 1 
+        // updates score if ball collides with a wall
+        if ball.pos.x + ball.radius >= SCREEN_WIDTH do score_1 += 1 
+        if ball.pos.x - ball.radius <= 0 do score_2 += 1 
 
         // reset position of object and pauses game if a score occurs
-        if ball.x - ball.radius <= 0 || ball.x + ball.radius >= SCREEN_WIDTH {
+        if ball.pos.x - ball.radius <= 0 || ball.pos.x + ball.radius >= SCREEN_WIDTH {
             paused = true
             initGame()
         } 
         
-        // reflects ball of ceiling and floor
-        if (ball.y - ball.radius <= 0 || ball.y + ball.radius >= SCREEN_HEIGHT) do ball.vel.y *= -1
+        // reflects ball off ceiling and floor
+        if (ball.pos.y - ball.radius <= 0 || ball.pos.y + ball.radius >= SCREEN_HEIGHT) do ball.vel.y *= -1
         
         // reflects ball of paddles
-        if rl.CheckCollisionCircleRec({ball.x, ball.y}, ball.radius, paddle_one.rect) {
-            ball.x += 10
+        if rl.CheckCollisionCircleRec({ball.pos.x, ball.pos.y}, ball.radius, paddle_one.rect) {
+            ball.pos.x += 10
             ball.vel.x *= -1
         }
 
-        if rl.CheckCollisionCircleRec({ball.x, ball.y}, ball.radius, paddle_two.rect) {
-            ball.x -= 10
+        if rl.CheckCollisionCircleRec({ball.pos.x, ball.pos.y}, ball.radius, paddle_two.rect) {
+            ball.pos.x -= 10
             ball.vel.x *= -1
         }
     }
@@ -117,16 +114,14 @@ drawGame :: proc() {
                 SCREEN_HEIGHT,
                 rl.WHITE)
     
-    // draws paddles
+    // draws paddle for player 1
     rl.DrawRectangleRec(paddle_one.rect, paddle_one.color)
 
+    // draw paddle for player 2
     rl.DrawRectangleRec(paddle_two.rect, paddle_two.color)
     
     // draws ball
-    rl.DrawCircle(i32(ball.x), 
-                  i32(ball.y),
-                  ball.radius,
-                  ball.color)
+    rl.DrawCircleV(ball.pos, ball.radius, ball.color)
     
     // draw pause text
     if paused do rl.DrawText("PRESS SPACE TO CONTINUE", 
