@@ -24,8 +24,8 @@ ball: Ball
 paused := true
 score_1, score_2: int
 
+// window logic and main game loop
 main :: proc() {
-    // window logic and main game loop
     rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Pong")
     defer rl.CloseWindow()
     rl.SetTargetFPS(60)
