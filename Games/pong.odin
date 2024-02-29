@@ -101,8 +101,8 @@ movement :: proc() {
     }
 }
 
+// draw paddles, ball, lines, text and clears screen per frame
 drawGame :: proc() {
-    // draw paddles, ball, lines, text and clears screen per frame
     rl.BeginDrawing()
     defer rl.EndDrawing()
     rl.ClearBackground(rl.BLACK)
