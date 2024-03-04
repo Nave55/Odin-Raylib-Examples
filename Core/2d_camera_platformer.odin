@@ -195,9 +195,9 @@ updateCameraCenterClamp :: proc() {
 }
 
 updateCameraSmooth :: proc() {
-    @(static) min_speed: f32 = 30
-    @(static) min_effect_length: f32 = 10
-    @(static) fraction_speed: f32 = .8
+    min_speed: f32 = 30
+    min_effect_length: f32 = 10
+    fraction_speed: f32 = .8
 
     camera.offset = {SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2}
     diff := player.position - camera.target
