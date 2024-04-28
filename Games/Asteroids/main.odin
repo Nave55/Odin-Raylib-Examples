@@ -33,6 +33,7 @@ main :: proc() {
 initGame :: proc() {
     clear(&asteroids)
     clear(&bullets)
+    clear(&destroy_particles)
     createPlayer()
     immune = 0
     fired = false
@@ -125,6 +126,7 @@ collisions :: proc() {
                     if rl.CheckCollisionCircleRec(i.center, i.radius, asteroid_bb)  {
                         i.alive = false
                         j.alive = false
+                        destroyAnimation(j.pos, f32(j.asteroid.width / 4), rl.GRAY, true, 0)
                     }
                 }
             }
@@ -144,10 +146,10 @@ collisions :: proc() {
         }
         
         if j.alive == false {
-            x_val := f32(rl.GetRandomValue(i32(j.pos.x) - j.asteroid.width - 40, i32(j.pos.x) + j.asteroid.width - 40))
-            y_val := f32(rl.GetRandomValue(i32(j.pos.y) - j.asteroid.height - 40, i32(j.pos.y) + j.asteroid.height - 40))
-            x_val_2 := f32(rl.GetRandomValue(i32(j.pos.x) - j.asteroid.width - 40, i32(j.pos.x) + j.asteroid.width - 40))
-            y_val_2 := f32(rl.GetRandomValue(i32(j.pos.y) - j.asteroid.height - 40, i32(j.pos.y) + j.asteroid.height / 40))
+            x_val := f32(rl.GetRandomValue(i32(j.pos.x) - j.asteroid.width / 2, i32(j.pos.x) + j.asteroid.width / 2))
+            y_val := f32(rl.GetRandomValue(i32(j.pos.y) - j.asteroid.height / 2, i32(j.pos.y) + j.asteroid.height / 2))
+            x_val_2 := f32(rl.GetRandomValue(i32(j.pos.x) - j.asteroid.width / 2, i32(j.pos.x) + j.asteroid.width / 2))
+            y_val_2 := f32(rl.GetRandomValue(i32(j.pos.y) - j.asteroid.height / 2, i32(j.pos.y) + j.asteroid.height / 2))
 
             vel: rl.Vector2
             vel_2: rl.Vector2
@@ -211,12 +213,23 @@ drawGame :: proc() {
             i.rot += 1
             i.pos += i.vel
         }
+
         rl.DrawTexturePro(i.asteroid, 
                          {0, 0, f32(i.asteroid.width), f32(i.asteroid.height)}, 
                          {i.pos.x, i.pos.y, f32(i.asteroid.width), f32(i.asteroid.height)}, 
                          {f32(i.asteroid.width) / 2, f32(i.asteroid.height) / 2}, 
                          i.rot, 
                          rl.WHITE)
+    }
+
+    for &i, ind in destroy_particles {
+        if !pause {
+            i.center += i.velocity / 100
+            i.timer += 1
+        }
+        rl.DrawCircleV(i.center, i.radius, i.color)
+        if i.timer == 30 do i.alive = false
+        if i.alive == false do unordered_remove(&destroy_particles, ind)
     }
 
     rl.DrawText(rl.TextFormat("Score: %v", score), 0, 0, 20, rl.DARKPURPLE)
