@@ -220,7 +220,13 @@ drawGame :: proc() {
                                            HEIGHT / 2 - 50, 
                                            40, 
                                            rl.DARKGRAY)
-}
+
+    if immune < 10 do rl.DrawText("IMMUNE", 
+                                   WIDTH / 2 - rl.MeasureText("IMMUNE", 40) / 2, 
+                                   0, 
+                                   40, 
+                                   rl.GREEN)
+}   
 
 updateGame :: proc() {
     if len(asteroids) == 0 || game_over {
