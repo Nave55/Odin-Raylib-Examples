@@ -20,6 +20,7 @@ pause := true
 game_over := false
 immune: f32 = 0
 fired := false
+last_score: int
 
 main :: proc() {
     // Manage window and load textures
@@ -41,10 +42,8 @@ initGame :: proc() {
     createPlayer()
     immune = 0
     fired = false
-    if game_over {
-        score = 0
-        game_over = false
-    }
+    pause = true
+    if game_over do score = 0
     
     // Create the 5 large asteroids with random positions and velocities
     for i in 1..=5 {
@@ -157,7 +156,10 @@ collisions :: proc() {
     for &j, ast_ind in asteroids {
         asteroid_bb: rl.Rectangle = {(j.pos.x - f32(j.asteroid.width / 2)), j.pos.y - f32(j.asteroid.height / 2), f32(j.asteroid.width), f32(j.asteroid.height)}
         if immune >= 10 {
-            if rl.CheckCollisionCircleRec(player.position, player.radius, asteroid_bb) do game_over = true
+            if rl.CheckCollisionCircleRec(player.position, player.radius, asteroid_bb) {
+                game_over = true
+                last_score = score
+            }
         }
         // Create smaller asteroids on collisions with bullets
         if j.alive == false {
@@ -257,11 +259,20 @@ drawGame :: proc() {
     rl.DrawText(rl.TextFormat("Score: %v", score), 0, 0, 30, rl.DARKPURPLE)
 
     // Draw paused text
-    if pause && !game_over do rl.DrawText("PRESS ENTER TO CONTINUE", 
-                                           WIDTH / 2 - rl.MeasureText("PRESS ENTER TO CONTINUE", 40) / 2, 
-                                           HEIGHT / 2 - 50, 
-                                           40, 
-                                           rl.DARKGRAY)
+    if pause && game_over{
+        text := rl.TextFormat("GAME OVER -- SCORE: %v", last_score)
+        rl.DrawText(rl.TextFormat(text), 
+                    WIDTH / 2 - rl.MeasureText(text, 40) / 2, 
+                    HEIGHT / 2 - 70, 
+                    40, 
+                    rl.RED)
+       
+        rl.DrawText("PRESS ENTER TO CONTINUE", 
+                    WIDTH / 2 - rl.MeasureText("PRESS ENTER TO CONTINUE", 40) / 2, 
+                    HEIGHT / 2 - 30, 
+                    40, 
+                    rl.DARKGRAY)
+    }
     // Draw immune text
     if immune < 10 do rl.DrawText("IMMUNE", 
                                    WIDTH / 2 - rl.MeasureText("IMMUNE", 40) / 2, 
@@ -272,10 +283,7 @@ drawGame :: proc() {
 
 updateGame :: proc() {
     // Check if game is over
-    if len(asteroids) == 0 || game_over {
-        pause = true
-        initGame()
-    }
+    if (len(asteroids) == 0 || game_over) && !pause do initGame()
     // Call functions to update the game
     controls()
     collisions()
