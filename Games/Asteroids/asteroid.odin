@@ -1,6 +1,7 @@
 package asteroids
 
 import rl "vendor:raylib"
+import "core:math"
 
 Asteroids :: struct {
     asteroid: rl.Texture2D,
@@ -11,9 +12,21 @@ Asteroids :: struct {
     alive: bool,
 }
 
+Destroy :: struct {
+    center: rl.Vector2,
+    radius: f32,
+    color: rl.Color,
+    velocity: rl.Vector2,
+    alive: bool,
+    timer: int,
+}
+
 sml_texture: rl.Texture2D
 med_texture: rl.Texture2D
 big_texture: rl.Texture2D
+
+destroy_particles: [dynamic]Destroy
+asteroids: [dynamic]Asteroids
 
 createTextures :: proc() {
     sml_image := rl.LoadImage("imgs/1.png")
@@ -37,7 +50,11 @@ createAsteroid :: proc(size: rl.Texture2D, pos: rl.Vector2, vel: rl.Vector2, rot
     if type == "big" do  append_elems(&asteroids, Asteroids{big_texture, pos, vel, rot, type, alive})
 }
 
-destroyAnimation :: proc() {
+destroyAnimation :: proc(center: rl.Vector2, radius: f32, color: rl.Color, alive: bool, timer: int) {
+    for i in 1..=10 {
+        x1 := center.x + math.sin(f32(i * 36.0)) * radius
+        y1 := center.y + math.cos(f32(i * 36.0)) * radius
+        velocity := rl.Vector2{x1, y1} - center
+        append_elems(&destroy_particles, Destroy{{x1, y1}, .5, color, velocity, alive, timer})
+    }
 }
-
-asteroids: [dynamic]Asteroids
