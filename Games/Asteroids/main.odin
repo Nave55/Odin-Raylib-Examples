@@ -228,7 +228,7 @@ drawGame :: proc() {
             i.timer += 1
         }
         rl.DrawCircleV(i.center, i.radius, i.color)
-        if i.timer == 30 do i.alive = false
+        if i.timer == 100 do i.alive = false
         if i.alive == false do unordered_remove(&destroy_particles, ind)
     }
 
