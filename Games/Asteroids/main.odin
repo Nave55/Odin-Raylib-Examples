@@ -192,7 +192,6 @@ collisions :: proc() {
 }
 
 drawGame :: proc() {
-    fmt.println(len(bullets))
     rl.BeginDrawing()
     defer rl.EndDrawing()
     rl.ClearBackground(rl.BLACK)
