@@ -18,6 +18,7 @@ score: int
 pause := true
 game_over := false
 immune: f32 = 0
+fired := false
 
 main :: proc() {
     rl.InitWindow(WIDTH, HEIGHT, "Asteroids")
@@ -34,6 +35,7 @@ initGame :: proc() {
     clear(&bullets)
     createPlayer()
     immune = 0
+    fired = false
     if game_over {
         score = 0
         game_over = false
@@ -83,7 +85,10 @@ controls :: proc() {
         
             if rl.IsKeyDown(.LEFT) do rotation -= 5
             if rl.IsKeyDown(.RIGHT) do rotation += 5
-            if rl.IsKeyPressed(.SPACE) do createBullet({x1, y1}, 2, rl.WHITE, {speed.x, speed.y}, true)
+            if rl.IsKeyPressed(.SPACE) {
+                createBullet({x1, y1}, 2, rl.WHITE, {speed.x, speed.y}, true)
+                fired = true
+            }
         }
         if rl.IsKeyPressed(.ENTER) {
             pause = !pause
@@ -130,6 +135,7 @@ collisions :: proc() {
         if i.alive == false do unordered_remove(&bullets, bul_ind)
     }
 
+    if fired do immune = 10
     if immune < 10 && !pause do immune += .1
     for &j, ast_ind in asteroids {
         asteroid_bb: rl.Rectangle = {(j.pos.x - f32(j.asteroid.width / 2)), j.pos.y - f32(j.asteroid.height / 2), f32(j.asteroid.width), f32(j.asteroid.height)}
