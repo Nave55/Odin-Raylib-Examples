@@ -224,7 +224,7 @@ drawGame :: proc() {
 
     for &i, ind in destroy_particles {
         if !pause {
-            i.center += i.velocity / 100
+            i.center += i.velocity / 50
             i.timer += 1
         }
         rl.DrawCircleV(i.center, i.radius, i.color)
@@ -232,7 +232,7 @@ drawGame :: proc() {
         if i.alive == false do unordered_remove(&destroy_particles, ind)
     }
 
-    rl.DrawText(rl.TextFormat("Score: %v", score), 0, 0, 20, rl.DARKPURPLE)
+    rl.DrawText(rl.TextFormat("Score: %v", score), 0, 0, 30, rl.DARKPURPLE)
 
     if pause && !game_over do rl.DrawText("PRESS ENTER TO CONTINUE", 
                                            WIDTH / 2 - rl.MeasureText("PRESS ENTER TO CONTINUE", 40) / 2, 
