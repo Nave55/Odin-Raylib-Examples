@@ -55,6 +55,6 @@ destroyAnimation :: proc(center: rl.Vector2, radius: f32, color: rl.Color, alive
         x1 := center.x + math.sin(f32(i * 36.0)) * radius
         y1 := center.y + math.cos(f32(i * 36.0)) * radius
         velocity := rl.Vector2{x1, y1} - center
-        append_elems(&destroy_particles, Destroy{{x1, y1}, .5, color, velocity, alive, timer})
+        append_elems(&destroy_particles, Destroy{{x1, y1}, 1, color, velocity, alive, timer})
     }
 }
