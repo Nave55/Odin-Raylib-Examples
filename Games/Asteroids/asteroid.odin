@@ -28,6 +28,7 @@ big_texture: rl.Texture2D
 destroy_particles: [dynamic]Destroy
 asteroids: [dynamic]Asteroids
 
+// Function to create asteroid textures
 createTextures :: proc() {
     sml_image := rl.LoadImage("imgs/1.png")
     defer rl.UnloadImage(sml_image)
@@ -44,12 +45,14 @@ createTextures :: proc() {
     big_texture = rl.LoadTextureFromImage(big_image)
 }
 
+// function to create asteroids
 createAsteroid :: proc(size: rl.Texture2D, pos: rl.Vector2, vel: rl.Vector2, rot: f32, type: string, alive: bool) {
     if type == "sml" do  append_elems(&asteroids, Asteroids{sml_texture, pos, vel, rot, type, alive})
     if type == "med" do  append_elems(&asteroids, Asteroids{med_texture, pos, vel, rot, type, alive})
     if type == "big" do  append_elems(&asteroids, Asteroids{big_texture, pos, vel, rot, type, alive})
 }
 
+// function to create particles for dead asteroids
 destroyAnimation :: proc(center: rl.Vector2, radius: f32, color: rl.Color, alive: bool, timer: int) {
     for i in 1..=10 {
         x1 := center.x + math.sin(f32(i * 36.0)) * radius
