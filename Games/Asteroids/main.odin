@@ -150,14 +150,20 @@ collisions :: proc() {
         }
         // Create smaller asteroids on collisions with bullets
         if j.alive == false {
-            pos: rl.Vector2 = {f32(rl.GetRandomValue(i32(j.pos.x) - j.asteroid.width / 2, i32(j.pos.x) + j.asteroid.width / 2)),
-                               f32(rl.GetRandomValue(i32(j.pos.y) - j.asteroid.height / 2, i32(j.pos.y) + j.asteroid.height / 2))}
             if j.type == "big" {
-                for i in 1..=2 do createAsteroid("med", pos)
+                for i in 1..=2 {
+                    pos: rl.Vector2 = {f32(rl.GetRandomValue(i32(j.pos.x - f32(j.asteroid.width / 2)), i32(j.pos.x + f32(j.asteroid.width / 2)))),
+                                       f32(rl.GetRandomValue(i32(j.pos.y - f32(j.asteroid.height / 2)), i32(j.pos.y + f32(j.asteroid.height / 2))))}
+                    createAsteroid("med", pos)
+                }
                 score += 10
             }
             else if j.type == "med" {
-                for i in 1..=2 do createAsteroid("sml", pos)
+                for i in 1..=2 {
+                    pos: rl.Vector2 = {f32(rl.GetRandomValue(i32(j.pos.x - f32(j.asteroid.width / 2)), i32(j.pos.x + f32(j.asteroid.width / 2)))),
+                                       f32(rl.GetRandomValue(i32(j.pos.y - f32(j.asteroid.height / 2)), i32(j.pos.y + f32(j.asteroid.height / 2))))}
+                    createAsteroid("sml", pos)
+                }
                 score += 20
             }
             else do score += 50
