@@ -48,19 +48,7 @@ initGame :: proc() {
     // Create the 5 large asteroids with random positions and velocities
     for i in 1..=5 {
         pos: rl.Vector2 = {f32(rl.GetRandomValue(0, WIDTH)), f32(rl.GetRandomValue(0, HEIGHT))}
-        
-        vel: rl.Vector2
-        if rl.GetRandomValue(0, 1) == 0 {
-            vel.x = f32(rl.GetRandomValue(1, 2))
-        }
-        else do vel.x = f32(rl.GetRandomValue(-2, -1))
-
-        if rl.GetRandomValue(0, 1) == 0 {
-            vel.y = f32(rl.GetRandomValue(1, 2))
-        }
-        else do vel.y = f32(rl.GetRandomValue(-2, -1))
-
-        createAsteroid(big_texture, pos, vel, 0, "big", true)
+        createAsteroid("big", pos)
     }
 }
 
@@ -102,7 +90,7 @@ controls :: proc() {
     if rl.IsKeyPressed(.ENTER) {
         pause = !pause
         game_over = false
-    }   
+    }
 }
 
 collisions :: proc() {
@@ -162,42 +150,14 @@ collisions :: proc() {
         }
         // Create smaller asteroids on collisions with bullets
         if j.alive == false {
-            x_val := f32(rl.GetRandomValue(i32(j.pos.x) - j.asteroid.width / 2, i32(j.pos.x) + j.asteroid.width / 2))
-            y_val := f32(rl.GetRandomValue(i32(j.pos.y) - j.asteroid.height / 2, i32(j.pos.y) + j.asteroid.height / 2))
-            x_val_2 := f32(rl.GetRandomValue(i32(j.pos.x) - j.asteroid.width / 2, i32(j.pos.x) + j.asteroid.width / 2))
-            y_val_2 := f32(rl.GetRandomValue(i32(j.pos.y) - j.asteroid.height / 2, i32(j.pos.y) + j.asteroid.height / 2))
-
-            vel: rl.Vector2
-            vel_2: rl.Vector2
-
-            if rl.GetRandomValue(0, 1) == 0 {
-                vel.x = f32(rl.GetRandomValue(1, 2))
-            }
-            else do vel.x = f32(rl.GetRandomValue(-2, -1))
-    
-            if rl.GetRandomValue(0, 1) == 0 {
-                vel.y = f32(rl.GetRandomValue(1, 2))
-            }
-            else do vel.y = f32(rl.GetRandomValue(-2, -1))
-
-            if rl.GetRandomValue(0, 1) == 0 {
-                vel_2.x = f32(rl.GetRandomValue(1, 2))
-            }
-            else do vel_2.x = f32(rl.GetRandomValue(-2, -1))
-    
-            if rl.GetRandomValue(0, 1) == 0 {
-                vel_2.y = f32(rl.GetRandomValue(1, 2))
-            }
-            else do vel_2.y = f32(rl.GetRandomValue(-2, -1))
-            
+            pos: rl.Vector2 = {f32(rl.GetRandomValue(i32(j.pos.x) - j.asteroid.width / 2, i32(j.pos.x) + j.asteroid.width / 2)),
+                               f32(rl.GetRandomValue(i32(j.pos.y) - j.asteroid.height / 2, i32(j.pos.y) + j.asteroid.height / 2))}
             if j.type == "big" {
-                createAsteroid(med_texture, {x_val, y_val}, vel, 0, "med", true)
-                createAsteroid(med_texture, {x_val_2, y_val_2}, vel_2, 0, "med", true)
+                for i in 1..=2 do createAsteroid("med", pos)
                 score += 10
             }
             else if j.type == "med" {
-                createAsteroid(sml_texture, {x_val, y_val}, vel, 0, "sml", true)
-                createAsteroid(sml_texture, {x_val_2, y_val_2}, vel_2, 0, "sml", true)
+                for i in 1..=2 do createAsteroid("sml", pos)
                 score += 20
             }
             else do score += 50
