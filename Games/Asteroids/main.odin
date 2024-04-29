@@ -36,10 +36,10 @@ main :: proc() {
 
 initGame :: proc() {
     // initialize all game objects and settings
+    createPlayer()
     clear(&asteroids)
     clear(&bullets)
     clear(&destroy_particles)
-    createPlayer()
     immune = 0
     fired = false
     pause = true
@@ -258,21 +258,23 @@ drawGame :: proc() {
     // Draw Score
     rl.DrawText(rl.TextFormat("Score: %v", score), 0, 0, 30, rl.DARKPURPLE)
 
-    // Draw paused text
-    if pause && game_over{
+    // Draw Game Over Text
+    if pause && game_over {
         text := rl.TextFormat("GAME OVER -- SCORE: %v", last_score)
         rl.DrawText(rl.TextFormat(text), 
                     WIDTH / 2 - rl.MeasureText(text, 40) / 2, 
                     HEIGHT / 2 - 70, 
                     40, 
                     rl.RED)
-       
-        rl.DrawText("PRESS ENTER TO CONTINUE", 
-                    WIDTH / 2 - rl.MeasureText("PRESS ENTER TO CONTINUE", 40) / 2, 
-                    HEIGHT / 2 - 30, 
-                    40, 
-                    rl.DARKGRAY)
     }
+
+    // Draw Pause Text
+    if pause do rl.DrawText("PRESS ENTER TO CONTINUE", 
+                             WIDTH / 2 - rl.MeasureText("PRESS ENTER TO CONTINUE", 40) / 2, 
+                             HEIGHT / 2 - 30, 
+                             40, 
+                             rl.DARKGRAY)
+    
     // Draw immune text
     if immune < 10 do rl.DrawText("IMMUNE", 
                                    WIDTH / 2 - rl.MeasureText("IMMUNE", 40) / 2, 
