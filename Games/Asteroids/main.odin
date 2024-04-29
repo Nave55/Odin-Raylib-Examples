@@ -102,8 +102,7 @@ controls :: proc() {
     if rl.IsKeyPressed(.ENTER) {
         pause = !pause
         game_over = false
-    }
-    
+    }   
 }
 
 collisions :: proc() {
