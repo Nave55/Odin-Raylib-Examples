@@ -46,10 +46,20 @@ createTextures :: proc() {
 }
 
 // function to create asteroids
-createAsteroid :: proc(size: rl.Texture2D, pos: rl.Vector2, vel: rl.Vector2, rot: f32, type: string, alive: bool) {
-    if type == "sml" do  append_elems(&asteroids, Asteroids{sml_texture, pos, vel, rot, type, alive})
-    if type == "med" do  append_elems(&asteroids, Asteroids{med_texture, pos, vel, rot, type, alive})
-    if type == "big" do  append_elems(&asteroids, Asteroids{big_texture, pos, vel, rot, type, alive})
+createAsteroid :: proc(type: string, pos: rl.Vector2) {
+    vel: rl.Vector2
+    if rl.GetRandomValue(0, 1) == 0 {
+        vel.x = f32(rl.GetRandomValue(1, 2))
+    }
+    else do vel.x = f32(rl.GetRandomValue(-2, -1))
+    if rl.GetRandomValue(0, 1) == 0 {
+        vel.y = f32(rl.GetRandomValue(1, 2))
+    }
+    else do vel.y = f32(rl.GetRandomValue(-2, -1))
+
+    if type == "big" do append_elems(&asteroids, Asteroids{big_texture, pos, vel, 0, type, true})
+    if type == "med" do append_elems(&asteroids, Asteroids{med_texture, pos, vel, 0, type, true})
+    if type == "sml" do append_elems(&asteroids, Asteroids{sml_texture, pos, vel, 0, type, true})  
 }
 
 // function to create particles for dead asteroids
