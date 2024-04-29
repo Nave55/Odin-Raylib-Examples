@@ -65,9 +65,8 @@ createAsteroid :: proc(type: string, pos: rl.Vector2) {
 // function to create particles for dead asteroids
 destroyAnimation :: proc(center: rl.Vector2, radius: f32, color: rl.Color, alive: bool, timer: int) {
     for i in 1..=10 {
-        x1 := center.x + math.sin(f32(i * 36.0)) * radius
-        y1 := center.y + math.cos(f32(i * 36.0)) * radius
-        velocity := rl.Vector2{x1, y1} - center
-        append_elems(&destroy_particles, Destroy{{x1, y1}, 1, color, velocity, alive, timer})
+        pos: rl.Vector2 = {center.x + math.sin(f32(i * 36.0)) * radius, center.y + math.cos(f32(i * 36.0)) * radius}
+        velocity := pos - center
+        append_elems(&destroy_particles, Destroy{pos, 1, color, velocity, alive, timer})
     }
 }
