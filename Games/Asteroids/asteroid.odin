@@ -34,10 +34,8 @@ createTextures :: proc() {
     defer rl.UnloadImage(sml_image)
     sml_texture = rl.LoadTextureFromImage(sml_image)
 
-    med_image := rl.LoadImage("imgs/1.png")
-    defer rl.UnloadImage(med_image)
-    rl.ImageResize(&med_image, 42, 36)
-    med_texture = rl.LoadTextureFromImage(med_image)
+    rl.ImageResize(&sml_image, 42, 36)
+    med_texture = rl.LoadTextureFromImage(sml_image)
 
     big_image := rl.LoadImage("imgs/2.png")
     defer rl.UnloadImage(big_image)
