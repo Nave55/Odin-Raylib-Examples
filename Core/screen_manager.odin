@@ -11,9 +11,8 @@ package scene_manager
 *   Example licensed under an unmodified zlib/libpng license, which is an OSI-certified,
 *   BSD-like license that allows static linking with closed source software
 *
-*   Translation to Odin by Evan Martinez (@Nave55)
-*
 *   Copyright (c) 2021-2024 Ramon Santamaria (@raysan5)
+*   Translation to Odin by Evan Martinez (@Nave55)
 *
 ********************************************************************************************/
 
@@ -51,11 +50,11 @@ changeScene :: proc() {
             frames_counter += 1
             if frames_counter > 120 do scene = .TITLE
         case .TITLE: 
-            if rl.IsKeyPressed(.ENTER) || rl.IsGestureDetected(.DOUBLETAP) do scene = .GAMEPLAY
+            if rl.IsKeyPressed(.ENTER) || rl.IsGestureDetected(.TAP) do scene = .GAMEPLAY
         case .GAMEPLAY: 
-            if rl.IsKeyPressed(.ENTER) || rl.IsGestureDetected(.DOUBLETAP) do scene = .ENDING
+            if rl.IsKeyPressed(.ENTER) || rl.IsGestureDetected(.TAP) do scene = .ENDING
         case .ENDING: 
-            if rl.IsKeyPressed(.ENTER) || rl.IsGestureDetected(.DOUBLETAP) do scene = .TITLE
+            if rl.IsKeyPressed(.ENTER) || rl.IsGestureDetected(.TAP) do scene = .TITLE
     }  
 }
  
