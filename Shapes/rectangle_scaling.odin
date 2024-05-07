@@ -58,22 +58,22 @@ controls :: proc() {
     }
     else do mouse_scale_ready = false
 
-        if mouse_scale_mode {
-            mouse_scale_ready = true
+    if mouse_scale_mode {
+        mouse_scale_ready = true
 
-            rec.width = (mouse_position.x - rec.x)
-            rec.height = (mouse_position.y - rec.y)
+        rec.width = (mouse_position.x - rec.x)
+        rec.height = (mouse_position.y - rec.y)
 
-            // Check minimum rec size
-            if rec.width < MOUSE_SCALE_MARK_SIZE do rec.width = MOUSE_SCALE_MARK_SIZE
-            if rec.height < MOUSE_SCALE_MARK_SIZE do rec.height = MOUSE_SCALE_MARK_SIZE
-            
-            // Check maximum rec size
-            if rec.width > (f32(rl.GetScreenWidth()) - rec.x) do rec.width = f32(rl.GetScreenWidth()) - rec.x
-            if rec.height > (f32(rl.GetScreenHeight()) - rec.y) do rec.height = f32(rl.GetScreenHeight()) - rec.y
+        // Check minimum rec size
+        if rec.width < MOUSE_SCALE_MARK_SIZE do rec.width = MOUSE_SCALE_MARK_SIZE
+        if rec.height < MOUSE_SCALE_MARK_SIZE do rec.height = MOUSE_SCALE_MARK_SIZE
+        
+        // Check maximum rec size
+        if rec.width > (f32(rl.GetScreenWidth()) - rec.x) do rec.width = f32(rl.GetScreenWidth()) - rec.x
+        if rec.height > (f32(rl.GetScreenHeight()) - rec.y) do rec.height = f32(rl.GetScreenHeight()) - rec.y
 
-            if rl.IsMouseButtonReleased(.LEFT)  do mouse_scale_mode = false
-        }
+        if rl.IsMouseButtonReleased(.LEFT)  do mouse_scale_mode = false
+    }
 }
 
 // draw everything
