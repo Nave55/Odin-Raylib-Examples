@@ -121,7 +121,7 @@ collisions :: proc() {
                 // Labels asteroids and bullets when they collide and shows explosion animation
                 for &j, ast_ind in asteroids {
                     asteroid_bb: rl.Rectangle = {(j.pos.x - f32(j.asteroid.width / 2)), j.pos.y - f32(j.asteroid.height / 2), f32(j.asteroid.width), f32(j.asteroid.height)}
-                    if rl.CheckCollisionCircleRec(i.center, i.radius, asteroid_bb)  {
+                    if rl.CheckCollisionCircleRec(i.center, i.radius - 3, asteroid_bb)  {
                         i.alive = false
                         j.alive = false
                         destroyAnimation(j.pos, f32(j.asteroid.width / 4), rl.GRAY, true, 0)
