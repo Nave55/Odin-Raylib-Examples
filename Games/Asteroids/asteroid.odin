@@ -2,10 +2,8 @@ package asteroids
 
 import rl "vendor:raylib"
 import "core:math"
-import "core:fmt"
 
 Asteroids :: struct {
-    asteroid: rl.Texture2D,
     pos: rl.Vector2,
     vel: rl.Vector2,
     rot: f32,
@@ -22,26 +20,24 @@ Destroy :: struct {
     timer: int,
 }
 
-sml_texture: rl.Texture2D
-med_texture: rl.Texture2D
-big_texture: rl.Texture2D
-
 destroy_particles: [dynamic]Destroy
 asteroids: [dynamic]Asteroids
+ast_map := make(map[string]rl.Texture2D)
+
 
 // Function to create asteroid textures
 createTextures :: proc() {
     sml_image := rl.LoadImage("imgs/1.png")
     defer rl.UnloadImage(sml_image)
-    sml_texture = rl.LoadTextureFromImage(sml_image)
+    ast_map["sml"] = rl.LoadTextureFromImage(sml_image)
 
     rl.ImageResize(&sml_image, 42, 36)
-    med_texture = rl.LoadTextureFromImage(sml_image)
+    ast_map["med"] = rl.LoadTextureFromImage(sml_image)
 
     big_image := rl.LoadImage("imgs/2.png")
     defer rl.UnloadImage(big_image)
     rl.ImageResize(&big_image, 122, 96)
-    big_texture = rl.LoadTextureFromImage(big_image)
+    ast_map["big"] = rl.LoadTextureFromImage(big_image)
 }
 
 // function to create asteroids
@@ -56,9 +52,9 @@ createAsteroid :: proc(type: string, pos: rl.Vector2) {
     }
     else do vel.y = f32(rl.GetRandomValue(-2, -1))
 
-    if type == "big" do append_elems(&asteroids, Asteroids{big_texture, pos, vel, 0, type, true})
-    if type == "med" do append_elems(&asteroids, Asteroids{med_texture, pos, vel, 0, type, true})
-    if type == "sml" do append_elems(&asteroids, Asteroids{sml_texture, pos, vel, 0, type, true})  
+    if type == "big" do append_elems(&asteroids, Asteroids{pos, vel, 0, type, true})
+    if type == "med" do append_elems(&asteroids, Asteroids{pos, vel, 0, type, true})
+    if type == "sml" do append_elems(&asteroids, Asteroids{pos, vel, 0, type, true})  
 }
 
 // function to create particles for dead asteroids
