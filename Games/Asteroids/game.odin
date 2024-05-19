@@ -15,18 +15,19 @@ import "core:fmt"
 WIDTH :: 1000
 HEIGHT :: 840
 PLAYER_SPEED :: 6.0
+immune: f32 = 0
 score: int
+last_score: int
 pause := true
 game_over := false
-immune: f32 = 0
 fired := false
-last_score: int
 
 main :: proc() {
     // Manage window and load textures
     rl.InitWindow(WIDTH, HEIGHT, "Asteroids")
     defer rl.CloseWindow()
     rl.SetTargetFPS(60)
+    defer unloadGame()
     createTextures()
     initGame()
 
@@ -44,7 +45,7 @@ initGame :: proc() {
     fired = false
     pause = true
     if game_over do score = 0
-    
+ 
     // Create the 5 large asteroids with random positions and velocities
     for i in 1..=5 {
         pos: rl.Vector2 = {f32(rl.GetRandomValue(0, WIDTH)), f32(rl.GetRandomValue(0, HEIGHT))}
@@ -104,10 +105,10 @@ collisions :: proc() {
     }
     // Changes asteroid position when asteroid goes off screen
     for &j, ast_ind in asteroids {
-        if j.pos.x > WIDTH + f32(j.asteroid.width) do j.pos.x = -(f32(j.asteroid.width))
-        else if j.pos.x < -(f32(j.asteroid.width)) do j.pos.x = WIDTH + (f32(j.asteroid.width))
-        if j.pos.y > (HEIGHT + f32(j.asteroid.height) * 2) do j.pos.y = -(f32(j.asteroid.height));
-        else if j.pos.y < -(f32(j.asteroid.height)) do j.pos.y = HEIGHT + f32(j.asteroid.height)
+        if j.pos.x > WIDTH + f32(ast_map[j.type].width) do j.pos.x = -(f32(ast_map[j.type].width))
+        else if j.pos.x < -(f32(ast_map[j.type].width)) do j.pos.x = WIDTH + (f32(ast_map[j.type].width))
+        if j.pos.y > (HEIGHT + f32(ast_map[j.type].height) * 2) do j.pos.y = -(f32(ast_map[j.type].height));
+        else if j.pos.y < -(f32(ast_map[j.type].height)) do j.pos.y = HEIGHT + f32(ast_map[j.type].height)
     }
 
     if len(
@@ -120,11 +121,11 @@ collisions :: proc() {
             if len(asteroids) > 0 {
                 // Labels asteroids and bullets when they collide and shows explosion animation
                 for &j, ast_ind in asteroids {
-                    asteroid_bb: rl.Rectangle = {(j.pos.x - f32(j.asteroid.width / 2)), j.pos.y - f32(j.asteroid.height / 2), f32(j.asteroid.width), f32(j.asteroid.height)}
-                    if rl.CheckCollisionCircleRec(i.center, i.radius - 3, asteroid_bb)  {
+                    asteroid_bb: rl.Rectangle = {(j.pos.x - f32(ast_map[j.type].width / 2)), j.pos.y - f32(ast_map[j.type].height / 2), f32(ast_map[j.type].width), f32(ast_map[j.type].height)}
+                    if rl.CheckCollisionCircleRec(i.center, i.radius, asteroid_bb)  {
                         i.alive = false
                         j.alive = false
-                        destroyAnimation(j.pos, f32(j.asteroid.width / 4), rl.GRAY, true, 0)
+                        destroyAnimation(j.pos, f32(ast_map[j.type].width / 4), rl.GRAY, true, 0)
                     }
                 }
             }
@@ -141,9 +142,9 @@ collisions :: proc() {
     if immune < 10 && !pause do immune += .1
     // If not immune check collisions btwn asteroids and ship
     for &j, ast_ind in asteroids {
-        asteroid_bb: rl.Rectangle = {(j.pos.x - f32(j.asteroid.width / 2)), j.pos.y - f32(j.asteroid.height / 2), f32(j.asteroid.width), f32(j.asteroid.height)}
+        asteroid_bb: rl.Rectangle = {(j.pos.x - f32(ast_map[j.type].width / 2)), j.pos.y - f32(ast_map[j.type].height / 2), f32(ast_map[j.type].width), f32(ast_map[j.type].height)}
         if immune >= 10 {
-            if rl.CheckCollisionCircleRec(player.position, player.radius, asteroid_bb) {
+            if rl.CheckCollisionCircleRec(player.position, player.radius- 3, asteroid_bb) {
                 game_over = true
                 last_score = score
             }
@@ -152,16 +153,16 @@ collisions :: proc() {
         if j.alive == false {
             if j.type == "big" {
                 for i in 1..=2 {
-                    pos: rl.Vector2 = {f32(rl.GetRandomValue(i32(j.pos.x - f32(j.asteroid.width / 2)), i32(j.pos.x + f32(j.asteroid.width / 2)))),
-                                       f32(rl.GetRandomValue(i32(j.pos.y - f32(j.asteroid.height / 2)), i32(j.pos.y + f32(j.asteroid.height / 2))))}
+                    pos: rl.Vector2 = {f32(rl.GetRandomValue(i32(j.pos.x - f32(ast_map[j.type].width / 2)), i32(j.pos.x + f32(ast_map[j.type].width / 2)))),
+                                       f32(rl.GetRandomValue(i32(j.pos.y - f32(ast_map[j.type].height / 2)), i32(j.pos.y + f32(ast_map[j.type].height / 2))))}
                     createAsteroid("med", pos)
                 }
                 score += 10
             }
             else if j.type == "med" {
                 for i in 1..=2 {
-                    pos: rl.Vector2 = {f32(rl.GetRandomValue(i32(j.pos.x - f32(j.asteroid.width / 2)), i32(j.pos.x + f32(j.asteroid.width / 2)))),
-                                       f32(rl.GetRandomValue(i32(j.pos.y - f32(j.asteroid.height / 2)), i32(j.pos.y + f32(j.asteroid.height / 2))))}
+                    pos: rl.Vector2 = {f32(rl.GetRandomValue(i32(j.pos.x - f32(ast_map[j.type].width / 2)), i32(j.pos.x + f32(ast_map[j.type].width / 2)))),
+                                       f32(rl.GetRandomValue(i32(j.pos.y - f32(ast_map[j.type].height / 2)), i32(j.pos.y + f32(ast_map[j.type].height / 2))))}
                     createAsteroid("sml", pos)
                 }
                 score += 20
@@ -201,10 +202,11 @@ drawGame :: proc() {
             i.rot += 1
             i.pos += i.vel
         }
-        rl.DrawTexturePro(i.asteroid, 
-                         {0, 0, f32(i.asteroid.width), f32(i.asteroid.height)}, 
-                         {i.pos.x, i.pos.y, f32(i.asteroid.width), f32(i.asteroid.height)}, 
-                         {f32(i.asteroid.width) / 2, f32(i.asteroid.height) / 2}, 
+
+        rl.DrawTexturePro(ast_map[i.type], 
+                         {0, 0, f32(ast_map[i.type].width), f32(ast_map[i.type].height)}, 
+                         {i.pos.x, i.pos.y, f32(ast_map[i.type].width), f32(ast_map[i.type].height)}, 
+                         {f32(ast_map[i.type].width) / 2, f32(ast_map[i.type].height) / 2}, 
                          i.rot, 
                          rl.WHITE)
     }
@@ -226,7 +228,7 @@ drawGame :: proc() {
     // Draw Game Over Text
     if pause && game_over {
         text := rl.TextFormat("GAME OVER -- SCORE: %v", last_score)
-        rl.DrawText(rl.TextFormat(text), 
+        rl.DrawText(text, 
                     WIDTH / 2 - rl.MeasureText(text, 40) / 2, 
                     HEIGHT / 2 - 70, 
                     40, 
@@ -255,4 +257,11 @@ updateGame :: proc() {
     controls()
     collisions()
     drawGame()
+}
+
+unloadGame :: proc() {
+    delete(ast_map)
+    delete(destroy_particles)
+    delete(asteroids)
+    delete(bullets)
 }
