@@ -131,9 +131,12 @@ rayCasting :: proc() {
         for &j in obstacles {
             for k in 0..<len(j.vertices) - 1 {
                 inter: Intersect
-                if k < len(j.vertices) - 2 do inter = lineIntersect(m_pos, i, j.vertices[k], j.vertices[k + 1])
-                else do inter = lineIntersect(m_pos, i, j.vertices[k + 1], j.vertices[0])
+                inter = lineIntersect(m_pos, i, j.vertices[k], j.vertices[k + 1])
                 if inter.result do append_elems(&tmp, inter.pos)
+                if k == len(j.vertices) - 2 {
+                    inter = lineIntersect(m_pos, i, j.vertices[k + 1], j.vertices[0])
+                    if inter.result do append_elems(&tmp, inter.pos)
+                }
             }
         }
         for k in 0..<len(tmp) do append(&distances, lg.distance(m_pos, tmp[k]))
@@ -156,8 +159,8 @@ drawGame :: proc() {
     defer rl.EndDrawing()
     rl.ClearBackground(rl.BLACK)
 
-    drawFan()
     for i in obstacles do rl.DrawPoly(i.center, i.sides, i.radius, 0, i.color)
+    drawFan()
     rl.DrawCircleV(m_pos, 10, rl.YELLOW)
 }
 
