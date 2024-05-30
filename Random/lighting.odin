@@ -123,8 +123,8 @@ rayCasting :: proc() {
             }
         }
         for k in 0..<len(tmp) do append(&distances, lg.distance(m_pos, tmp[k]))
-        new1 := lineOffset(m_pos, tmp[slice.min_index(distances[:])], 0.001)
-        new2 := lineOffset(m_pos, tmp[slice.min_index(distances[:])], -0.001)
+        new1 := lineOffset(m_pos, tmp[slice.min_index(distances[:])], 0.0001)
+        new2 := lineOffset(m_pos, tmp[slice.min_index(distances[:])], -0.0001)
         append_elems(&intersects, tmp[slice.min_index(distances[:])])
         append_elems(&intersects, new1)
         append_elems(&intersects, new2)
@@ -144,7 +144,7 @@ rayCasting :: proc() {
         if inter == false {
             new_val: Intersect 
             for j := 0; j < 7; j += 2 {
-                new_val = lineIntersect(m_pos, i + (i - m_pos) * 100, edges[j], edges[j + 1])
+                new_val = lineIntersect(m_pos, i + (i - m_pos) * 1000, edges[j], edges[j + 1])
                 if new_val.result do i = new_val.pos
             }
         }
