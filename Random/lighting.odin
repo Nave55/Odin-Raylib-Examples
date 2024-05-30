@@ -196,7 +196,7 @@ drawGame :: proc() {
     // for j in intersects do rl.DrawLineV(m_pos, j, rl.WHITE)
     drawFan()
     for i in obstacles do rl.DrawPolyLines(i.center, i.sides, i.radius, 0, i.color)
-    rl.DrawCircleV(m_pos, 10, rl.RED)
+    rl.DrawCircleV(m_pos, 10, rl.YELLOW)
 }
 
 updateGame :: proc() {
