@@ -84,9 +84,7 @@ lineIntersect :: proc(a, b, c, d: rl.Vector2) -> Intersect {
     cma := c - a
     t := lg.vector_cross2(cma, s) / rxs
     u := lg.vector_cross2(cma, r) / rxs
-    if t >= 0 && t <= 1 && u >= 0 && u <= 1 {
-        return {true, {a.x + t * r.x, a.y + t * r.y}}
-    }
+    if t >= 0 && t <= 1 && u >= 0 && u <= 1 do return {true, {a.x + t * r.x, a.y + t * r.y}}
     else do return {false, {0, 0}}
 }
 
@@ -103,49 +101,29 @@ lineOffset :: proc(start, end: rl.Vector2, angle: f32) -> rl.Vector2 {
 
 rayCasting :: proc() {
     //cursor
-    clear(&intersects)
     m_pos = rl.GetMousePosition()
     
-    // create array of all vertices
-    vec_arr: [dynamic]rl.Vector2; defer delete(vec_arr)
+    clear(&intersects)
+
+    // create array of all intersects
     for i in obstacles {
-        for j in i.vertices do append_elems(&vec_arr, j)
-    }
-
-    // create rays that intersect vertices
-    for &i in vec_arr {
-        tmp: [dynamic]rl.Vector2; defer delete(tmp)
-        distances: [dynamic]f32; defer delete(distances)
-        for &j in obstacles {
-            for k in 0..<len(j.vertices) - 1 {
-                inter: Intersect
-                inter = lineIntersect(m_pos, i, j.vertices[k], j.vertices[k + 1])
-                if inter.result do append_elems(&tmp, inter.pos)
-                if k == len(j.vertices) - 2 {
-                    inter = lineIntersect(m_pos, i, j.vertices[k + 1], j.vertices[0])
-                    if inter.result do append_elems(&tmp, inter.pos)
-                }
-            }
+        for j in i.vertices {
+            new1 := lineOffset(m_pos, j, 0.00001)
+            new2 := lineOffset(m_pos, j, -0.00001)
+            append_elems(&intersects, j)
+            append_elems(&intersects, (new1 + (new1 - m_pos) * 100))
+            append_elems(&intersects, (new2 + (new2 - m_pos) * 100))
         }
-        // append distances between mouse and intersection points to disstances array
-        for k in 0..<len(tmp) do append(&distances, lg.distance(m_pos, tmp[k]))
-        // create 2 rays with a pos and neg offset and add to intersections array
-        new1 := lineOffset(m_pos, tmp[slice.min_index(distances[:])], 0.00001)
-        new2 := lineOffset(m_pos, tmp[slice.min_index(distances[:])], -0.00001)
-        append_elems(&intersects, tmp[slice.min_index(distances[:])])
-        append_elems(&intersects, (new1 + (new1 - m_pos) * 100))
-        append_elems(&intersects, (new2 + (new2 - m_pos) * 100))
-        
     }
 
-    // create rays if they intersect with screen corners
+    // create rays that intersect with screen corners
     for i in 0..<4 {
         k := i < 2 ? 0 : 2
         l_inter := lineIntersect(m_pos, edges[i], edges[k], edges[k + 1])
         if l_inter.result do append(&intersects, l_inter.pos)
     }
 
-    // check if rays that collide with screen edges collide with an obstacle first
+    // check if a ray that collides with a screen edge collides with an obstacle first and then alter it's position
     for &i in intersects {
         tmp: [dynamic]rl.Vector2; defer delete(tmp)
         distances: [dynamic]f32; defer delete(distances)
