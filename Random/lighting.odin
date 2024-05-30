@@ -39,8 +39,8 @@ main :: proc() {
     rl.InitWindow(S_WIDTH, S_HEIGHT, "Template")
     defer rl.CloseWindow()
     rl.SetTargetFPS(60)
-    initGame()
     defer unloadGame()
+    initGame()
 
     for !rl.WindowShouldClose() do updateGame()
   
