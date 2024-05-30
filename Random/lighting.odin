@@ -39,11 +39,10 @@ main :: proc() {
     rl.InitWindow(S_WIDTH, S_HEIGHT, "Template")
     defer rl.CloseWindow()
     rl.SetTargetFPS(60)
-    defer unloadGame()
+    defer unloadGame() 
     initGame()
 
     for !rl.WindowShouldClose() do updateGame()
-  
 }
 
 // create polygon based off values
