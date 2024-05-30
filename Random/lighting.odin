@@ -28,6 +28,7 @@ m_pos: rl.Vector2
 edges: [8]rl.Vector2
 
 main :: proc() {
+    rl.SetConfigFlags(rl.ConfigFlags{.MSAA_4X_HINT})
     rl.InitWindow(S_WIDTH, S_HEIGHT, "Template")
     defer rl.CloseWindow()
     rl.SetTargetFPS(60)
@@ -62,12 +63,12 @@ initGame :: proc() {
              {S_WIDTH * 2, -S_HEIGHT}, {S_WIDTH * 2, S_HEIGHT * 2}} // right edge
 
     // create polys
-    createPoly(&obstacles[0], {100, 300}, 3, 90, rl.LIGHTGRAY)
-    createPoly(&obstacles[1], {260, 130}, 4, 80, rl.LIGHTGRAY)
-    createPoly(&obstacles[2], {1100, 400}, 5, 60, rl.LIGHTGRAY)
-    createPoly(&obstacles[3], {700, 200}, 6, 80, rl.LIGHTGRAY)
-    createPoly(&obstacles[4], {320, 600}, 7, 70, rl.LIGHTGRAY)
-    createPoly(&obstacles[5], {800, 700}, 8, 100, rl.LIGHTGRAY)
+    createPoly(&obstacles[0], {100, 300}, 3, 90, rl.DARKGRAY)
+    createPoly(&obstacles[1], {260, 130}, 4, 80, rl.DARKGRAY)
+    createPoly(&obstacles[2], {1100, 400}, 5, 60, rl.DARKGRAY)
+    createPoly(&obstacles[3], {700, 200}, 6, 80, rl.DARKGRAY)
+    createPoly(&obstacles[4], {320, 600}, 7, 70, rl.DARKGRAY)
+    createPoly(&obstacles[5], {800, 700}, 8, 100, rl.DARKGRAY)
 }
 
 // check if two lines intersect
@@ -193,9 +194,9 @@ drawGame :: proc() {
     defer rl.EndDrawing()
     rl.ClearBackground(rl.BLACK)
 
-    // for j in intersects do rl.DrawLineV(m_pos, j, rl.WHITE)
+    for j in intersects do rl.DrawLineV(m_pos, j, rl.LIGHTGRAY)
     drawFan()
-    for i in obstacles do rl.DrawPolyLines(i.center, i.sides, i.radius, 0, i.color)
+    for i in obstacles do rl.DrawPoly(i.center, i.sides, i.radius, 0, i.color)
     rl.DrawCircleV(m_pos, 10, rl.YELLOW)
 }
 
