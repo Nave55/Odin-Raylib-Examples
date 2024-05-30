@@ -30,7 +30,7 @@ Obstacle :: struct {
 
 S_WIDTH :: 1280
 S_HEIGHT :: 800
-obstacles:  [6]Obstacle
+obstacles:  [7]Obstacle
 edges:      [8]rl.Vector2
 intersects: [dynamic]rl.Vector2
 m_pos:      rl.Vector2
@@ -74,6 +74,7 @@ initGame :: proc() {
     createPoly(&obstacles[3], {700, 200}, 6, 80, rl.DARKGRAY)
     createPoly(&obstacles[4], {320, 600}, 7, 70, rl.DARKGRAY)
     createPoly(&obstacles[5], {800, 700}, 8, 100, rl.DARKGRAY)
+    createPoly(&obstacles[6], {620, 450}, 3, 75, rl.DARKGRAY)
 }
 
 // checks if two lines intersect
