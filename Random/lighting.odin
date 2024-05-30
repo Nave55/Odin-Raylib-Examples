@@ -11,24 +11,23 @@ S_HEIGHT :: 800
 
 Intersect :: struct {
     result: bool,
-    pos: rl.Vector2,
+    pos:    rl.Vector2,
 }
 
 Obstacle :: struct {
-    center: rl.Vector2,
-    radius: f32,
-    sides: i32,
-    color: rl.Color,
+    center:   rl.Vector2,
+    radius:   f32,
+    sides:    i32,
+    color:    rl.Color,
     vertices: [dynamic]rl.Vector2,
 }
 
-obstacles: [6]Obstacle
+obstacles:  [6]Obstacle
+edges:      [8]rl.Vector2
 intersects: [dynamic]rl.Vector2
-m_pos: rl.Vector2
-edges: [8]rl.Vector2
+m_pos:      rl.Vector2
 
 main :: proc() {
-    rl.SetConfigFlags(rl.ConfigFlags{.MSAA_4X_HINT})
     rl.InitWindow(S_WIDTH, S_HEIGHT, "Template")
     defer rl.CloseWindow()
     rl.SetTargetFPS(60)
@@ -107,7 +106,7 @@ rayCasting :: proc() {
         for j in i.vertices do append_elems(&vec_arr, j)
     }
 
-    // find nearest intersection points
+    // create rays that intersect vertices
     for &i in vec_arr {
         tmp: [dynamic]rl.Vector2; defer delete(tmp)
         distances: [dynamic]f32; defer delete(distances)
@@ -122,32 +121,15 @@ rayCasting :: proc() {
                 }
             }
         }
+        // create array of lengths
         for k in 0..<len(tmp) do append(&distances, lg.distance(m_pos, tmp[k]))
+        // create 2 rays with a pos and neg offset and add to intersections array
         new1 := lineOffset(m_pos, tmp[slice.min_index(distances[:])], 0.0001)
         new2 := lineOffset(m_pos, tmp[slice.min_index(distances[:])], -0.0001)
         append_elems(&intersects, tmp[slice.min_index(distances[:])])
-        append_elems(&intersects, new1)
-        append_elems(&intersects, new2)
-    }
-
-    // for rays that don't intersect with an object see if they intersect a screen position
-    for &i in intersects {
-        inter := false
-        for &j in obstacles {
-            for k in 0..<len(j.vertices) - 1 {
-                if lineIntersect(m_pos, i + (i - m_pos), j.vertices[k], j.vertices[k + 1]).result do inter = true
-                if k == len(j.vertices) - 2 {
-                    if lineIntersect(m_pos, i + (i - m_pos), j.vertices[k + 1], j.vertices[0]).result do inter = true
-                }
-            }
-        }
-        if inter == false {
-            new_val: Intersect 
-            for j := 0; j < 7; j += 2 {
-                new_val = lineIntersect(m_pos, i + (i - m_pos) * 1000, edges[j], edges[j + 1])
-                if new_val.result do i = new_val.pos
-            }
-        }
+        append_elems(&intersects, (new1 + (new1 - m_pos) * 100))
+        append_elems(&intersects, (new2 + (new2 - m_pos) * 100))
+        
     }
 
     // create rays if they intersect with screen corners
@@ -157,7 +139,7 @@ rayCasting :: proc() {
         if l_inter.result do append(&intersects, l_inter.pos)
     }
 
-    // check if rays that collided with screen position collide with an obstacle
+    // check if rays that collided with screen edges collide with an obstacle
     for &i in intersects {
         tmp: [dynamic]rl.Vector2; defer delete(tmp)
         distances: [dynamic]f32; defer delete(distances)
@@ -175,13 +157,11 @@ rayCasting :: proc() {
         for k in 0..<len(tmp) do append(&distances, lg.distance(m_pos, tmp[k]))
         if tmp != nil do i = tmp[slice.min_index(distances[:])]
     }
-
 }
 
 drawFan :: proc() {
     // sort intersects by angle
-    slice.sort_by(intersects[:], proc(i, j: rl.Vector2) -> bool {
-        return math.to_degrees(rl.Vector2LineAngle(m_pos, i)) < math.to_degrees(rl.Vector2LineAngle(m_pos, j))})
+    slice.sort_by(intersects[:], proc(i, j: rl.Vector2) -> bool {return math.to_degrees(rl.Vector2LineAngle(m_pos, i)) < math.to_degrees(rl.Vector2LineAngle(m_pos, j))})
     
     // insert mouse pos at index 0 and first ray to end of array 
     inject_at(&intersects, 0, m_pos)
@@ -194,10 +174,11 @@ drawGame :: proc() {
     defer rl.EndDrawing()
     rl.ClearBackground(rl.BLACK)
 
-    for j in intersects do rl.DrawLineV(m_pos, j, rl.LIGHTGRAY)
+    // for j in intersects do rl.DrawLineV(m_pos, j, rl.LIGHTGRAY)
     drawFan()
     for i in obstacles do rl.DrawPoly(i.center, i.sides, i.radius, 0, i.color)
     rl.DrawCircleV(m_pos, 10, rl.YELLOW)
+    rl.DrawFPS(5, 0)
 }
 
 updateGame :: proc() {
