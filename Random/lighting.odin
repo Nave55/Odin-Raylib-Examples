@@ -1,13 +1,19 @@
 package lighting
 
+/*******************************************************************************************
+*
+*   2d lighting effect using ray casting 
+*   
+*   Created by Evan Martinez (@Nave55)
+*
+********************************************************************************************/
+
 import rl "vendor:raylib"
 import lg "core:math/linalg"
 import "core:math"
 import "core:fmt"
 import "core:slice"
 
-S_WIDTH :: 1280
-S_HEIGHT :: 800
 
 Intersect :: struct {
     result: bool,
@@ -22,6 +28,8 @@ Obstacle :: struct {
     vertices: [dynamic]rl.Vector2,
 }
 
+S_WIDTH :: 1280
+S_HEIGHT :: 800
 obstacles:  [6]Obstacle
 edges:      [8]rl.Vector2
 intersects: [dynamic]rl.Vector2
@@ -32,8 +40,7 @@ main :: proc() {
     defer rl.CloseWindow()
     rl.SetTargetFPS(60)
     initGame()
-    defer for i in obstacles do delete(i.vertices)
-    defer delete(intersects)
+    defer unloadGame()
 
     for !rl.WindowShouldClose() do updateGame()
   
@@ -121,11 +128,11 @@ rayCasting :: proc() {
                 }
             }
         }
-        // create array of lengths
+        // append distances between mouse and intersection points to disstances array
         for k in 0..<len(tmp) do append(&distances, lg.distance(m_pos, tmp[k]))
         // create 2 rays with a pos and neg offset and add to intersections array
-        new1 := lineOffset(m_pos, tmp[slice.min_index(distances[:])], 0.0001)
-        new2 := lineOffset(m_pos, tmp[slice.min_index(distances[:])], -0.0001)
+        new1 := lineOffset(m_pos, tmp[slice.min_index(distances[:])], 0.00001)
+        new2 := lineOffset(m_pos, tmp[slice.min_index(distances[:])], -0.00001)
         append_elems(&intersects, tmp[slice.min_index(distances[:])])
         append_elems(&intersects, (new1 + (new1 - m_pos) * 100))
         append_elems(&intersects, (new2 + (new2 - m_pos) * 100))
@@ -139,7 +146,7 @@ rayCasting :: proc() {
         if l_inter.result do append(&intersects, l_inter.pos)
     }
 
-    // check if rays that collided with screen edges collide with an obstacle
+    // check if rays that collide with screen edges collide with an obstacle first
     for &i in intersects {
         tmp: [dynamic]rl.Vector2; defer delete(tmp)
         distances: [dynamic]f32; defer delete(distances)
@@ -161,7 +168,7 @@ rayCasting :: proc() {
 
 drawFan :: proc() {
     // sort intersects by angle
-    slice.sort_by(intersects[:], proc(i, j: rl.Vector2) -> bool {return math.to_degrees(rl.Vector2LineAngle(m_pos, i)) < math.to_degrees(rl.Vector2LineAngle(m_pos, j))})
+    slice.sort_by(intersects[:], proc(i, j: rl.Vector2) -> bool {return rl.Vector2LineAngle(m_pos, i) < rl.Vector2LineAngle(m_pos, j)})
     
     // insert mouse pos at index 0 and first ray to end of array 
     inject_at(&intersects, 0, m_pos)
@@ -178,10 +185,15 @@ drawGame :: proc() {
     drawFan()
     for i in obstacles do rl.DrawPoly(i.center, i.sides, i.radius, 0, i.color)
     rl.DrawCircleV(m_pos, 10, rl.YELLOW)
-    rl.DrawFPS(5, 0)
 }
 
 updateGame :: proc() {
     rayCasting()
     drawGame()
+}
+
+// delete all objects on the heap
+unloadGame :: proc() {
+    for i in obstacles do delete(i.vertices)
+    delete(intersects)
 }
