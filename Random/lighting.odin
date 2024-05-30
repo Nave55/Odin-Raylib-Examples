@@ -76,7 +76,7 @@ initGame :: proc() {
     createPoly(&obstacles[5], {800, 700}, 8, 100, rl.DARKGRAY)
 }
 
-// check if two lines intersect
+// checks if two lines intersect
 lineIntersect :: proc(a, b, c, d: rl.Vector2) -> Intersect {
     r := (b - a)
     s := (d - c)
@@ -88,7 +88,7 @@ lineIntersect :: proc(a, b, c, d: rl.Vector2) -> Intersect {
     else do return {false, {0, 0}}
 }
 
-// offsets line by radian value
+// offsets vector2 by radian value
 lineOffset :: proc(start, end: rl.Vector2, angle: f32) -> rl.Vector2 {
     x_diff := end.x - start.x
     y_diff := end.y - start.y
@@ -158,7 +158,6 @@ drawGame :: proc() {
     defer rl.EndDrawing()
     rl.ClearBackground(rl.BLACK)
 
-    // for j in intersects do rl.DrawLineV(m_pos, j, rl.LIGHTGRAY)
     drawFan()
     for i in obstacles do rl.DrawPoly(i.center, i.sides, i.radius, 0, i.color)
     rl.DrawCircleV(m_pos, 10, rl.YELLOW)
