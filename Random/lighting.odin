@@ -185,7 +185,7 @@ drawFan :: proc() {
     // insert mouse pos at index 0 and first ray to end of array 
     inject_at(&intersects, 0, m_pos)
     append(&intersects, intersects[1])
-    rl.DrawTriangleFan(raw_data(intersects), i32(len(intersects)), rl.WHITE)
+    rl.DrawTriangleFan(raw_data(intersects), i32(len(intersects)), rl.LIGHTGRAY)
 }
 
 drawGame :: proc() {
@@ -196,7 +196,7 @@ drawGame :: proc() {
     // for j in intersects do rl.DrawLineV(m_pos, j, rl.WHITE)
     drawFan()
     for i in obstacles do rl.DrawPolyLines(i.center, i.sides, i.radius, 0, i.color)
-    rl.DrawCircleV(m_pos, 10, rl.GRAY)    
+    rl.DrawCircleV(m_pos, 10, rl.RED)
 }
 
 updateGame :: proc() {
