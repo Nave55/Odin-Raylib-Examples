@@ -4,20 +4,20 @@ import rl "vendor:raylib"
 import "core:math"
 
 Asteroids :: struct {
-    rect: rl.Rectangle,
-    vel: rl.Vector2,
-    rot: f32,
-    type: string,
+    rect:  rl.Rectangle,
+    vel:   rl.Vector2,
+    rot:   f32,
+    type:  string,
     alive: u8,
 }
 
 Particles :: struct {
-    center: rl.Vector2,
-    radius: f32,
-    color: rl.Color,
+    center:   rl.Vector2,
+    radius:   f32,
+    color:    rl.Color,
     velocity: rl.Vector2,
-    alive: u8,
-    timer: u8,
+    alive:    u8,
+    timer:    u8,
 }
 
 particles: [dynamic]Particles
