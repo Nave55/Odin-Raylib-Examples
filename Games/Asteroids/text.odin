@@ -2,7 +2,7 @@ package asteroids
 
 import rl "vendor:raylib"
 
-score: int
+score:      int
 last_score: int
 
 drawText :: proc() {
