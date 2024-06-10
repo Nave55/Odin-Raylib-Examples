@@ -3,11 +3,11 @@ package asteroids
 import rl "vendor:raylib"
 
 Bullets :: struct {
-    center: rl.Vector2,
-    radius: f32,
-    color: rl.Color,
+    center:   rl.Vector2,
+    radius:   f32,
+    color:    rl.Color,
     velocity: rl.Vector2,
-    alive: u8,
+    alive:    u8,
 }
 
 bullets: [dynamic]Bullets
