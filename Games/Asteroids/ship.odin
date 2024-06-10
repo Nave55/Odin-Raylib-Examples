@@ -4,19 +4,19 @@ import rl "vendor:raylib"
 import "core:math"
 
 Ship :: struct {
-    position: rl.Vector2,
-    sides: i32,
-    radius: f32,
-    rotation: f32,
-    color: rl.Color,
-    speed: rl.Vector2,
+    position:     rl.Vector2,
+    sides:        i32,
+    radius:       f32,
+    rotation:     f32,
+    color:        rl.Color,
+    speed:        rl.Vector2,
     acceleration: f32,
 }
 
 SHIP_SPEED :: 6.0
-ship: Ship
-immune: f16
-fired: bool
+ship:         Ship
+immune:       f16
+fired:        bool
 
 // Function to create ship
 initShip :: proc() {
