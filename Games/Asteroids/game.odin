@@ -10,16 +10,17 @@ package asteroids
 import rl "vendor:raylib"
 import "core:math"
 
-WIDTH :: 1000
-HEIGHT :: 840
-pause := true
+WIDTH ::     1000
+HEIGHT ::    840
+FPS ::       60
+pause :=     true
 game_over := false
 
 main :: proc() {
     // Manage window and load textures
     rl.InitWindow(WIDTH, HEIGHT, "Asteroids")
     defer rl.CloseWindow()
-    rl.SetTargetFPS(60)
+    rl.SetTargetFPS(FPS)
 
     defer unloadGame()
     createTextures()
