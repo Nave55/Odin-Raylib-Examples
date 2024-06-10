@@ -54,9 +54,9 @@ createAsteroid :: proc(type: string, pos: rl.Vector2, min_vel, max_vel: i32) {
     else do vel.y = f32(rl.GetRandomValue(-max_vel, -min_vel))
 
     ast_size := rl.Vector2{f32(ast_map["sml"].width), f32(ast_map["sml"].height)}
-    if type == "big" do append_elems(&asteroids, Asteroids{{pos.x, pos.y, 122, 96}, vel, 0, type, 1})
-    if type == "med" do append_elems(&asteroids, Asteroids{{pos.x, pos.y, 42, 36}, vel, 0, type, 1})
     if type == "sml" do append_elems(&asteroids, Asteroids{{pos.x, pos.y, ast_size.x, ast_size.y}, vel, 0, type, 1})  
+    if type == "med" do append_elems(&asteroids, Asteroids{{pos.x, pos.y, 42, 36}, vel, 0, type, 1})
+    if type == "big" do append_elems(&asteroids, Asteroids{{pos.x, pos.y, 122, 96}, vel, 0, type, 1})
 }
 
 asteroidCollisions :: proc(amt: int, min_vel, max_vel: i32) {
