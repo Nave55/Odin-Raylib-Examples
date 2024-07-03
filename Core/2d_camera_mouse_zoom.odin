@@ -9,13 +9,13 @@ package main
 *   Example licensed under an unmodified zlib/libpng license, which is an OSI-certified,
 *   BSD-like license that allows static linking with closed source software
 *
-*   Translation to Odin by Evan Martinez (@Nave55)
-*
 *   Copyright (c) 2022-2024 Jeffery Myers (@JeffM2501)
+*   Translation to Odin by Evan Martinez (@Nave55)
 *
 ********************************************************************************************/
 
 import rl "vendor:raylib"
+import rlgl "vendor:raylib/rlgl"
 
 main :: proc() 
     {
@@ -76,13 +76,13 @@ main :: proc()
         rl.BeginMode2D(camera)
         // Draw the 3d grid, rotated 90 degrees and centered around 0,0 
         // just so we have something in the XY plane
-        rl.rlPushMatrix()
-            rl.rlTranslatef(0, 25*50, 0)
-            rl.rlRotatef(90, 1, 0, 0)
-            rl.DrawGrid(100, 50)
-        rl.rlPopMatrix()
-
-                // Draw a reference circle
+        rlgl.PushMatrix()
+        rlgl.Translatef(0, 25*50, 0)
+        rlgl.Rotatef(90, 1, 0, 0)
+        rl.DrawGrid(100, 50)
+        rlgl.PopMatrix()
+    
+        // Draw a reference circle
         rl.DrawCircle(100, 100, 50, rl.YELLOW)
                 
         rl.EndMode2D()
