@@ -28,7 +28,7 @@ Obstacle :: struct {
     vertices: [dynamic]rl.Vector2,
 }
 
-S_WIDTH :: 1280
+S_WIDTH ::  1280
 S_HEIGHT :: 800
 obstacles:  [7]Obstacle
 edges:      [8]rl.Vector2
