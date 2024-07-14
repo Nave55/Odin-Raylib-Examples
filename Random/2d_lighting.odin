@@ -168,8 +168,7 @@ updateGame :: proc() {
     rayCasting()
     drawGame()
 }
-
-// delete all objects on the heap
+ 
 unloadGame :: proc() {
     for i in obstacles do delete(i.vertices)
     delete(intersects)
