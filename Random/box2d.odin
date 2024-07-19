@@ -1,5 +1,13 @@
 package box
 
+/*******************************************************************************************
+*
+*    Example of box2d with raylib
+*    Box2d from https://github.com/cr1sth0fer/odin-box2d was added to my vendor library
+*    Created by Evan Martinez (@Nave55)
+*
+********************************************************************************************/
+
 import rl "vendor:raylib"
 import b2 "vendor:box2d"
 import "core:fmt"
