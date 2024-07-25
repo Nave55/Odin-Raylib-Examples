@@ -1,34 +1,40 @@
 package box
 
+/*************************************************************************************************************
+*
+*   simple box2d implementation
+*   
+*   controls - 'left click' adds balls, and 'right click' adds boxes
+*              's' alternates betweeen boxes and balls
+*              'up' and 'down' change the size of the balls and boxes depending on which is selected
+*              'c' changes the color of the boxes and balls depending on which is selected       
+*              'a' decreases time_step and 'b' decreases time_step
+*              'space' stops all movement              
+*
+*   Created by Evan Martinez (@Nave55)
+*
+***************************************************************************************************************/
+
 import rl "vendor:raylib"
 import b2 "vendor:box2d"
 import "core:fmt"
 
 Entity :: struct {
     body_id: b2.Body_ID,
-    pos: rl.Vector2,
-    dim: rl.Vector2,
-    col: rl.Color,
-    move: bool,
-    type: string,
+    pos:     rl.Vector2,
+    dim:     rl.Vector2,
+    col:     rl.Color,
+    move:    bool,
+    type:    string,
 }
 
-Selector :: enum {
-    Ball,
-    Box,
-}
+Selector :: enum {Ball, Box}
 
-Colors :: enum {
-    Green,
-    Blue,
-    Yellow,
-    Purple,
-    Orange,
-}
+Colors   :: enum {Green, Blue, Yellow, Purple, Orange}
 
 c_Struct :: struct {
     c_enum: Colors,
-    color: rl.Color
+    color:  rl.Color
 }
 
 SCREEN_WIDTH  :: 1280
@@ -49,7 +55,6 @@ c_mode:          [2]u8
 main :: proc() {
     rl.SetConfigFlags({.MSAA_4X_HINT})
     rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Box2D")
-    // rl.SetTargetFPS(60)
     defer { 
         rl.CloseWindow()
         unloadGame()
@@ -113,12 +118,11 @@ initGame :: proc() {
     world_def.gravity = b2.Vec2{0, 10}
     world_id = b2.create_world(&world_def)
 
-
-    // wall
+    // walls
     boxEntityInit({0, 600},  {1280, 120}, rl.GRAY,  false, "box", .1, .2)
     boxEntityInit({0, 0},    {1, 720},    rl.GRAY,  false, "box", .1, .2)
     boxEntityInit({1279, 0}, {1, 720},    rl.GRAY,  false, "box", .1, .2)
-    boxEntityInit({0, 1},    {1280, 1},    rl.GRAY,  false, "box", .1, .2)
+    // boxEntityInit({0, 1},    {1280, 1},    rl.GRAY,  false, "box", .1, .2)
 
 }
 
@@ -151,8 +155,14 @@ gameControls :: proc() {
     if rl.IsKeyPressed(.R) do initGame()
     
     if rl.IsKeyPressed(.SPACE) do pause = !pause
-    if rl.IsMouseButtonPressed(.LEFT)  do boxEntityInit(rl.GetMousePosition(), {ball_size, ball_size}, clr[c_mode[0]].color, true, "ball", .3, .1, .1)
-    if rl.IsMouseButtonPressed(.RIGHT) do boxEntityInit(rl.GetMousePosition(), {box_size, box_size},   clr[c_mode[1]].color, true, "box",  .3, .1, .1)
+
+    if rl.IsMouseButtonPressed(.LEFT)  {
+        boxEntityInit(rl.GetMousePosition(), {ball_size, ball_size}, clr[c_mode[0]].color, true, "ball", .3, .2, .1)
+    }
+
+    if rl.IsMouseButtonPressed(.RIGHT) {
+        boxEntityInit(rl.GetMousePosition(), {box_size, box_size}, clr[c_mode[1]].color, true, "box", .3, .2, .1)
+    }
 
     if rl.IsKeyPressed(.S) {
         if selector == .Ball do selector = .Box
