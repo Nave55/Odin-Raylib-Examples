@@ -3,6 +3,8 @@ package box
 /*************************************************************************************************************
 *
 *   simple box2d implementation
+*   box2d added to my vendor library
+*   Odin Version - https://github.com/cr1sth0fer/odin-box2d
 *   
 *   controls - 'left click' adds balls, and 'right click' adds boxes
 *              's' alternates betweeen boxes and balls
@@ -28,14 +30,13 @@ Entity :: struct {
     type:    string,
 }
 
-Selector :: enum {Ball, Box}
-
-Colors   :: enum {Green, Blue, Yellow, Purple, Orange}
-
-c_Struct :: struct {
+C_Struct :: struct {
     c_enum: Colors,
     color:  rl.Color
 }
+
+Selector :: enum {Ball, Box}
+Colors   :: enum {Green, Blue, Yellow, Purple, Orange}
 
 SCREEN_WIDTH  :: 1280
 SCREEN_HEIGHT :: 720
@@ -48,7 +49,7 @@ pause:           bool
 box_size:        f32
 ball_size:       f32
 selector:        Selector
-clr:             [5]c_Struct
+clr:             [5]C_Struct
 c_mode:          [2]u8
 
 
@@ -110,7 +111,7 @@ initGame :: proc() {
     ball_size = 20
     selector = .Box
     pause =    false
-    clr =   {{.Blue, rl.BLUE}, {.Green, rl.GREEN}, {.Yellow, rl.YELLOW}, {.Purple, rl.PURPLE}, {.Orange, rl.ORANGE}}
+    clr =      {{.Blue, rl.BLUE}, {.Green, rl.GREEN}, {.Yellow, rl.YELLOW}, {.Purple, rl.PURPLE}, {.Orange, rl.ORANGE}}
     clear(&entities)
 
     // initialize simulation world
@@ -127,11 +128,12 @@ initGame :: proc() {
 }
 
 boxEntityInit :: proc(pos, dim: rl.Vector2, col: rl.Color, move: bool, type: string, fric, dens: f32, a_dam: f32 = 0 ) {
-    pos := pos
     body_def := b2.default_body_def()
     if move do body_def.type = .Dynamic
+    else do body_def.type = .Static
     body_def.position = b2.Vec2{pos.x, invertY(pos.y, dim.y)}
     body_def.angular_damping = a_dam
+    // body_def.
     body_id := b2.create_body(world_id, &body_def)
     
     shape_def := b2.default_shape_def()
@@ -212,7 +214,10 @@ drawGame :: proc() {
 
     for &i in entities {
         using i
-        if i.type == "box"  do rl.DrawRectangleV(rayPos(pos, dim, type, move), dim * 2, col)
+        if i.type == "box" {
+            if move do rl.DrawRectangleV(rayPos(pos, dim, type, move), dim * 2, col)
+            else do rl.DrawRectangleV(rayPos(pos, dim, type, move), dim, col)
+        }
         if i.type == "ball" do rl.DrawCircleV(rayPos(pos, dim, type, move),    dim.x,   col) 
     }
 
