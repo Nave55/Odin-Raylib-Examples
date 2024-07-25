@@ -11,7 +11,8 @@ package box
 *              'up' and 'down' change the size of the balls and boxes depending on which is selected
 *              'c' changes the color of the boxes and balls depending on which is selected       
 *              'a' decreases time_step and 'b' decreases time_step
-*              'space' stops all movement              
+*              'space' stops all movement   
+*               'r' resets the simulation           
 *
 *   Created by Evan Martinez (@Nave55)
 *
@@ -60,13 +61,12 @@ main :: proc() {
         rl.CloseWindow()
         unloadGame()
     }
-    time_step = 1.0 / 60
-    sub_steps = 4
     initGame()
 
     for !rl.WindowShouldClose() do updateGame()   
 }
 
+// procedures to help with printing text for simulation
 debugGame1 :: proc(val: $T, col: rl.Color = rl.RED, size: i32 = 20,  x: i32 = 5, y: i32 = 0) {
     rl.DrawText(rl.TextFormat("%v", val), 
                 x,
@@ -88,11 +88,12 @@ debugGame :: proc{
     debugGame2,
 }
 
-
+// invert y position for box2d
 invertY :: proc(y, height: f32) -> f32 {
     return y + height
 }
 
+// translate box2d position to raylib coordinates
 rayPos :: proc(pos, dim: rl.Vector2, t: string, move: bool) -> rl.Vector2 {
     pos := pos
     if t == "box" {
@@ -105,13 +106,16 @@ rayPos :: proc(pos, dim: rl.Vector2, t: string, move: bool) -> rl.Vector2 {
     return pos
 }
 
+// init game with starting state
 initGame :: proc() {
     c_mode =    {0, 1}
     box_size =  20
     ball_size = 20
-    selector = .Box
-    pause =    false
-    clr =      {{.Blue, rl.BLUE}, {.Green, rl.GREEN}, {.Yellow, rl.YELLOW}, {.Purple, rl.PURPLE}, {.Orange, rl.ORANGE}}
+    selector =  .Box
+    pause =     false
+    time_step = 1.0 / 60
+    sub_steps = 4
+    clr =       {{.Blue, rl.BLUE}, {.Green, rl.GREEN}, {.Yellow, rl.YELLOW}, {.Purple, rl.PURPLE}, {.Orange, rl.ORANGE}}
     clear(&entities)
 
     // initialize simulation world
@@ -127,19 +131,23 @@ initGame :: proc() {
 
 }
 
+// procedure to create boxes and balls
 boxEntityInit :: proc(pos, dim: rl.Vector2, col: rl.Color, move: bool, type: string, fric, dens: f32, a_dam: f32 = 0 ) {
+
+    // body def
     body_def := b2.default_body_def()
     if move do body_def.type = .Dynamic
     else do body_def.type = .Static
     body_def.position = b2.Vec2{pos.x, invertY(pos.y, dim.y)}
     body_def.angular_damping = a_dam
-    // body_def.
     body_id := b2.create_body(world_id, &body_def)
     
+    // shape_def
     shape_def := b2.default_shape_def()
     shape_def.friction = fric
     shape_def.density = dens
     
+    // creates boxes and balls
     if type == "box" {
         box := b2.make_box(dim.x, dim.y)
         b2.create_polygon_shape(body_id, &shape_def, &box)
@@ -149,38 +157,39 @@ boxEntityInit :: proc(pos, dim: rl.Vector2, col: rl.Color, move: bool, type: str
         b2.create_circle_shape(body_id, &shape_def, &circle)
     }
     
+    // add entity to entities array
     ent := Entity{body_id, pos, dim, col, move, type}
     append(&entities, ent)
 }
 
 gameControls :: proc() {
+    // press 'r' to restart simulation
     if rl.IsKeyPressed(.R) do initGame()
-    
+
+    // pres 'space' to pause all motion
     if rl.IsKeyPressed(.SPACE) do pause = !pause
 
-    if rl.IsMouseButtonPressed(.LEFT)  {
-        boxEntityInit(rl.GetMousePosition(), {ball_size, ball_size}, clr[c_mode[0]].color, true, "ball", .3, .2, .1)
-    }
+    // 'left click' add balls at mouse location and 'right click' add balls at mouse location
+    if rl.IsMouseButtonPressed(.LEFT) do boxEntityInit(rl.GetMousePosition(), {ball_size, ball_size}, clr[c_mode[0]].color, true, "ball", .3, .2, .1)
+    if rl.IsMouseButtonPressed(.RIGHT) do boxEntityInit(rl.GetMousePosition(), {box_size, box_size}, clr[c_mode[1]].color, true, "box", .3, .2, .1)
 
-    if rl.IsMouseButtonPressed(.RIGHT) {
-        boxEntityInit(rl.GetMousePosition(), {box_size, box_size}, clr[c_mode[1]].color, true, "box", .3, .2, .1)
-    }
-
+    // press 's' changes between boxes and balls for color and size changes
     if rl.IsKeyPressed(.S) {
         if selector == .Ball do selector = .Box
         else do selector = .Ball
     }
 
+    // press 'up' or 'down' to change boxes and ball size depending on selector
     if rl.IsKeyPressed(.UP) {
         if selector == .Ball do ball_size += 1
         else do box_size += 1
     }
-
     if rl.IsKeyPressed(.DOWN) {
         if selector == .Ball do ball_size -= 1
         else do box_size -= 1
     }
 
+    // pressing 'c' changes color of boxes and balls depending on selector
     if rl.IsKeyPressed(.C) {
         if selector == .Ball  {
             if c_mode[0] != 4 do c_mode[0] += 1
@@ -192,10 +201,12 @@ gameControls :: proc() {
         }
     }
 
+    // press 'a' to slow simulation and 'd' to speed it up
     if rl.IsKeyPressed(.D) do time_step += .001
     if rl.IsKeyPressed(.A) do time_step -= .001
  }
 
+ // updates simulation based on time step and sub steps
 updateB2D :: proc() {
     if !pause {
         b2.world_step(world_id, time_step, sub_steps)
@@ -207,6 +218,7 @@ updateB2D :: proc() {
     }
 }
 
+// draw all entities and text
 drawGame :: proc() {
     rl.BeginDrawing()
     defer rl.EndDrawing()
