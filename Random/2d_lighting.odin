@@ -14,7 +14,6 @@ import "core:math"
 import "core:fmt"
 import "core:slice"
 
-
 Intersect :: struct {
     result: bool,
     pos:    rl.Vector2,
