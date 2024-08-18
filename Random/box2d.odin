@@ -3,7 +3,6 @@ package box
 /*************************************************************************************************************
 *
 *   simple box2d implementation
-*   box2d added to my vendor library
 *   Odin Version - https://github.com/cr1sth0fer/odin-box2d
 *   
 *   controls - 'left click' adds balls, and 'right click' adds boxes
@@ -23,10 +22,11 @@ import b2 "vendor:box2d"
 import "core:fmt"
 
 Entity :: struct {
-    body_id: b2.Body_ID,
+    body_id: b2.BodyId,
     pos:     rl.Vector2,
     dim:     rl.Vector2,
     col:     rl.Color,
+    ang:     b2.Rot,
     move:    bool,
     type:    string,
 }
@@ -43,9 +43,8 @@ SCREEN_WIDTH  :: 1280
 SCREEN_HEIGHT :: 720
 time_step:       f32 
 sub_steps:       i32
-world_id:        b2.World_ID
+world_id:        b2.WorldId
 entities:        [dynamic]Entity
-angle:           f32
 pause:           bool
 box_size:        f32
 ball_size:       f32
@@ -119,46 +118,46 @@ initGame :: proc() {
     clear(&entities)
 
     // initialize simulation world
-    world_def := b2.default_world_def()
+    world_def := b2.DefaultWorldDef()
     world_def.gravity = b2.Vec2{0, 10}
-    world_id = b2.create_world(&world_def)
+    world_id = b2.CreateWorld(world_def)
 
     // walls
-    boxEntityInit({0, 600},  {1280, 120}, rl.GRAY,  false, "box", .1, .2)
-    boxEntityInit({0, 0},    {1, 720},    rl.GRAY,  false, "box", .1, .2)
-    boxEntityInit({1279, 0}, {1, 720},    rl.GRAY,  false, "box", .1, .2)
+    boxEntityInit({0, 600},  {1280, 120}, rl.GRAY, {},  false, "box", .1, .2)
+    boxEntityInit({0, 0},    {1, 720},    rl.GRAY, {},  false, "box", .1, .2)
+    boxEntityInit({1279, 0}, {1, 720},    rl.GRAY, {},  false, "box", .1, .2)
     // boxEntityInit({0, 1},    {1280, 1},    rl.GRAY,  false, "box", .1, .2)
 
 }
 
 // procedure to create boxes and balls
-boxEntityInit :: proc(pos, dim: rl.Vector2, col: rl.Color, move: bool, type: string, fric, dens: f32, a_dam: f32 = 0 ) {
+boxEntityInit :: proc(pos, dim: rl.Vector2, col: rl.Color, ang: b2.Rot, move: bool, type: string, fric, dens: f32, a_dam: f32 = 0 ) {
 
     // body def
-    body_def := b2.default_body_def()
-    if move do body_def.type = .Dynamic
-    else do body_def.type = .Static
+    body_def := b2.DefaultBodyDef()
+    if move do body_def.type = .dynamicBody
+    else do body_def.type = .staticBody
     body_def.position = b2.Vec2{pos.x, invertY(pos.y, dim.y)}
-    body_def.angular_damping = a_dam
-    body_id := b2.create_body(world_id, &body_def)
+    body_def.angularDamping = a_dam
+    body_id := b2.CreateBody(world_id, body_def)
     
     // shape_def
-    shape_def := b2.default_shape_def()
+    shape_def := b2.DefaultShapeDef()
     shape_def.friction = fric
     shape_def.density = dens
     
     // creates boxes and balls
     if type == "box" {
-        box := b2.make_box(dim.x, dim.y)
-        b2.create_polygon_shape(body_id, &shape_def, &box)
+        box := b2.MakeBox(dim.x, dim.y)
+        _ = b2.CreatePolygonShape(body_id, shape_def, box)
     }
     else if type == "ball" {
         circle := b2.Circle{{0, 0}, dim.x}
-        b2.create_circle_shape(body_id, &shape_def, &circle)
+        _ = b2.CreateCircleShape(body_id, shape_def, circle)
     }
     
     // add entity to entities array
-    ent := Entity{body_id, pos, dim, col, move, type}
+    ent := Entity{body_id, pos, dim, col, ang, move, type}
     append(&entities, ent)
 }
 
@@ -170,8 +169,8 @@ gameControls :: proc() {
     if rl.IsKeyPressed(.SPACE) do pause = !pause
 
     // 'left click' add balls at mouse location and 'right click' add balls at mouse location
-    if rl.IsMouseButtonPressed(.LEFT) do boxEntityInit(rl.GetMousePosition(), {ball_size, ball_size}, clr[c_mode[0]].color, true, "ball", .3, .2, .1)
-    if rl.IsMouseButtonPressed(.RIGHT) do boxEntityInit(rl.GetMousePosition(), {box_size, box_size}, clr[c_mode[1]].color, true, "box", .3, .2, .1)
+    if rl.IsMouseButtonPressed(.LEFT) do boxEntityInit(rl.GetMousePosition(),  {ball_size, ball_size}, clr[c_mode[0]].color,  {1, 1}, true, "ball", .3, .2, .1)
+    if rl.IsMouseButtonPressed(.RIGHT) do boxEntityInit(rl.GetMousePosition(), {box_size, box_size},   clr[c_mode[1]].color,  {1, 1}, true, "box", .3, .2, .1)
 
     // press 's' changes between boxes and balls for color and size changes
     if rl.IsKeyPressed(.S) {
@@ -209,11 +208,11 @@ gameControls :: proc() {
  // updates simulation based on time step and sub steps
 updateB2D :: proc() {
     if !pause {
-        b2.world_step(world_id, time_step, sub_steps)
+        b2.World_Step(world_id, time_step, sub_steps)
 
         for &i in entities {
-            i.pos = b2.body_get_position(i.body_id)
-            angle = b2.body_get_angle(i.body_id)   
+            i.pos = b2.Body_GetPosition(i.body_id)
+            i.ang = b2.Body_GetRotation(i.body_id)   
         }
     }
 }
@@ -251,6 +250,6 @@ updateGame :: proc() {
 }
 
 unloadGame :: proc() {
-    b2.destroy_world(world_id)
+    b2.DestroyWorld(world_id)
     delete(entities) 
 }
