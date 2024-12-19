@@ -1,5 +1,12 @@
 package template
 
+/*******************************************************************************************
+*
+*   Minesweeper (16x16)
+*   Sample game ported to Odin based of the Microsoft Original 
+*
+********************************************************************************************/
+
 import sa "core:container/small_array"
 import "core:fmt"
 import "core:math"
@@ -482,4 +489,3 @@ dfs :: proc(mat: ^[16][16]TileInfo, pos: [2]int, mp: ^map[[2]int]bool) {
 		dfs(mat, i, mp)
 	}
 }
-
