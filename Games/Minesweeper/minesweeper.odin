@@ -197,13 +197,15 @@ markTile :: proc() {
 	t_pos := getTilePos(m_pos)
 	if inBounds(t_pos, 16, 16) {
 		val := fetchVal(&grid, t_pos)
-		switch val.mark {
-		case .Clear:
-			val.mark = .Flag
-		case .Flag:
-			val.mark = .Question
-		case .Question:
-			val.mark = .Clear
+		if !val.revealed {
+			switch val.mark {
+			case .Clear:
+				val.mark = .Flag
+			case .Flag:
+				val.mark = .Question
+			case .Question:
+				val.mark = .Clear
+			}
 		}
 		// fmt.println(val)
 	}
