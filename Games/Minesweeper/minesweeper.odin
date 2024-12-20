@@ -36,7 +36,6 @@ SCREEN_HEIGHT :: 777
 COLS :: 16
 ROWS :: 16
 TILE_SIZE :: 40
-WOFFSET :: 40
 
 // global variables
 game_over: bool
@@ -98,7 +97,6 @@ drawGame :: proc() {
 	drawTimer()
 	// debugGame(rl.GetMousePosition())
 }
-
 
 // update game loop
 updateGame :: proc() {
@@ -177,7 +175,6 @@ unveilTile :: proc() {
 
 			// fmt.println(val)
 			if val.revealed && val.value == -1 do game_over = true
-
 		}
 	}
 }
@@ -242,7 +239,6 @@ bombsAndVictory :: proc() {
 	}
 
 	bombs_left = 40 - bombs
-
 }
 
 // Load all textures
@@ -344,7 +340,6 @@ drawFaces :: proc() {
 		if tile.x >= 0 && tile.y >= 0 && tile.x <= 15 && tile.y <= 15 {
 			rl.DrawTexture(int_map[11], 300, 20, 255)
 		} else do rl.DrawTexture(int_map[9], 300, 20, 255)
-
 	} else {
 		if !victory do rl.DrawTexture(int_map[10], 300, 20, 255)
 		else do rl.DrawTexture(int_map[12], 300, 20, 255)
@@ -358,7 +353,9 @@ drawFaces :: proc() {
 // Draw Bomb Tracker
 drawBombTracker :: proc() {
 	rect: rl.Rectangle = {30, 30, 100, 50}
+
 	rl.DrawRectangleRec(rect, rl.BLACK)
+
 	rl.DrawText(
 		rl.TextFormat("%v", bombs_left),
 		i32(rect.x + rect.width / 2) - rl.MeasureText(rl.TextFormat("%v", bombs_left), 40) / 2,
@@ -373,7 +370,9 @@ drawTimer :: proc() {
 	hr, min, sec := time.clock_from_stopwatch(stopwatch)
 	ttl := (hr * 60 * 60) + (min * 60) + sec
 	rect: rl.Rectangle = {SCREEN_WIDTH - 135, 30, 100, 50}
+
 	rl.DrawRectangleRec(rect, rl.BLACK)
+
 	rl.DrawText(
 		rl.TextFormat("%v", ttl),
 		i32(rect.x + rect.width / 2) - rl.MeasureText(rl.TextFormat("%v", ttl), 40) / 2,
@@ -427,6 +426,7 @@ printGridVals :: proc(mat: ^[16][16]TileInfo) {
 			if ind % 15 != 0 || ind == 0 do fmt.printf("%v, ", j.value)
 			else do fmt.print(j.value)
 		}
+
 		fmt.print("]\n")
 	}
 }
@@ -454,7 +454,6 @@ setTileVals :: proc(mat: ^[16][16]TileInfo) {
 				)
 				j.value = filt
 			}
-
 		}
 	}
 }
@@ -481,3 +480,4 @@ dfs :: proc(mat: ^[16][16]TileInfo, pos: [2]int, mp: ^map[[2]int]bool) {
 		dfs(mat, i, mp)
 	}
 }
+
