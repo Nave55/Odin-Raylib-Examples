@@ -101,8 +101,8 @@ drawGame :: proc() {
 
 // update game loop
 updateGame :: proc() {
-	bombsAndVictory()
 	controls()
+	bombsAndVictory()
 	drawGame()
 }
 
@@ -220,13 +220,26 @@ clickSmiley :: proc() {
 	}
 }
 
+// Checks if hovering over smiley face
+hoverSmiley :: proc() -> bool {
+	face_loc: rl.Vector2 = {300, 20}
+	m_pos := rl.GetMousePosition()
+	if rl.IsMouseButtonDown(.LEFT) {
+		return abs(face_loc.x - m_pos.x) <= 72 && abs(face_loc.y - m_pos.y) <= 72
+	}
+	return false
+}
+
 // checks how many bombs are left and also victory conditions
 bombsAndVictory :: proc() {
 	clear: i32 = 0
 	bombs: i32 = 0
-
-	for i in grid {
-		for j in i {
+	for &i in grid {
+		for &j in i {
+			if victory && j.value == -1 do j.mark = .Flag
+			if !victory && game_over && j.value == -1 && j.revealed && j.mark == .Clear {
+				j.value -= 1
+			}
 			if j.mark == .Flag do bombs += 1
 			if j.revealed do clear += 1
 		}
@@ -238,6 +251,7 @@ bombsAndVictory :: proc() {
 	}
 
 	bombs_left = 40 - bombs
+
 }
 
 // Load all textures
@@ -247,6 +261,7 @@ loadTextures :: proc() {
 	flag_img := rl.LoadTexture("textures/flag.png")
 	question_img := rl.LoadTexture("textures/question.png")
 	smile_img := rl.LoadTexture("textures/smile.png")
+	smile_clear_img := rl.LoadTexture("textures/smile_clear.png")
 	frown_img := rl.LoadTexture("textures/frown.png")
 	sunglasses_img := rl.LoadTexture("textures/sunglasses.png")
 	surprise_img := rl.LoadTexture("textures/surprise.png")
@@ -283,6 +298,7 @@ loadTextures :: proc() {
 	int_map[10] = frown_img
 	int_map[11] = surprise_img
 	int_map[12] = sunglasses_img
+	int_map[13] = smile_clear_img
 }
 
 // Draw Textures and caluclates bomb number left and victory conditions.
@@ -301,23 +317,25 @@ drawEnumMapTiles :: proc(j: ^TileInfo) {
 	if !j.revealed {
 		switch j.mark {
 		case .Clear:
-			rl.DrawTexture(enum_map[.Clear], i32(j.x), i32(j.y), 255)
 			if j.grid_pos == hoverTile() && !game_over {
 				rl.DrawTexture(int_map[0], i32(j.x), i32(j.y), 255)
-			}
-			if game_over && j.value == -1 {
-				rl.DrawTexture(int_map[-1], i32(j.x), i32(j.y), 255)
+			} else {
+				rl.DrawTexture(enum_map[.Clear], i32(j.x), i32(j.y), 255)
+
 			}
 		case .Flag:
-			rl.DrawTexture(enum_map[.Flag], i32(j.x), i32(j.y), 255)
 			if game_over && j.value != -1 {
 				rl.DrawTexture(int_map[-3], i32(j.x), i32(j.y), 255)
+			} else {
+				rl.DrawTexture(enum_map[.Flag], i32(j.x), i32(j.y), 255)
+
 			}
 		case .Question:
 			rl.DrawTexture(enum_map[.Question], i32(j.x), i32(j.y), 255)
-			if game_over && j.value == -1 {
-				rl.DrawTexture(int_map[-1], i32(j.x), i32(j.y), 255)
-			}
+		}
+
+		if !victory && game_over && j.value == -1 && j.mark != .Flag {
+			rl.DrawTexture(int_map[-1], i32(j.x), i32(j.y), 255)
 		}
 	}
 }
@@ -325,28 +343,7 @@ drawEnumMapTiles :: proc(j: ^TileInfo) {
 // Draw Everyting revealed
 drawIntMapTiles :: proc(j: ^TileInfo) {
 	if j.revealed {
-		switch j.value {
-		case -1:
-			rl.DrawTexture(int_map[-2], i32(j.x), i32(j.y), 255)
-		case 0:
-			rl.DrawTexture(int_map[0], i32(j.x), i32(j.y), 255)
-		case 1:
-			rl.DrawTexture(int_map[1], i32(j.x), i32(j.y), 255)
-		case 2:
-			rl.DrawTexture(int_map[2], i32(j.x), i32(j.y), 255)
-		case 3:
-			rl.DrawTexture(int_map[3], i32(j.x), i32(j.y), 255)
-		case 4:
-			rl.DrawTexture(int_map[4], i32(j.x), i32(j.y), 255)
-		case 5:
-			rl.DrawTexture(int_map[5], i32(j.x), i32(j.y), 255)
-		case 6:
-			rl.DrawTexture(int_map[6], i32(j.x), i32(j.y), 255)
-		case 7:
-			rl.DrawTexture(int_map[7], i32(j.x), i32(j.y), 255)
-		case 8:
-			rl.DrawTexture(int_map[8], i32(j.x), i32(j.y), 255)
-		}
+		rl.DrawTexture(int_map[j.value], i32(j.x), i32(j.y), 255)
 	}
 }
 
@@ -363,6 +360,7 @@ drawFaces :: proc() {
 		else do rl.DrawTexture(int_map[12], 300, 20, 255)
 	}
 
+	if hoverSmiley() do rl.DrawTexture(int_map[13], 300, 20, 255)
 }
 
 // Draw Bomb Tracker
@@ -491,3 +489,4 @@ dfs :: proc(mat: ^[16][16]TileInfo, pos: [2]int, mp: ^map[[2]int]bool) {
 		dfs(mat, i, mp)
 	}
 }
+
