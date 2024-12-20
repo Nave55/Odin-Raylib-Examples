@@ -52,6 +52,7 @@ board: rl.Texture2D
 
 // main proc
 main :: proc() {
+	rl.SetTraceLogLevel(.NONE)
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Minesweeper")
 	defer rl.CloseWindow()
 	rl.SetTargetFPS(30)
@@ -78,7 +79,7 @@ initGame :: proc() {
 controls :: proc() {
 	if rl.IsMouseButtonReleased(.LEFT) {
 		if !game_over do unveilTile()
-		clickSmiley()
+		if hoverSmiley() do initGame()
 	}
 
 	if rl.IsMouseButtonReleased(.RIGHT) {
@@ -95,7 +96,7 @@ drawGame :: proc() {
 	drawTextures()
 	drawBombTracker()
 	drawTimer()
-	// debugGame(clear_tiles)
+	// debugGame(rl.GetMousePosition())
 }
 
 
@@ -211,23 +212,13 @@ markTile :: proc() {
 	}
 }
 
-// If you click on smiley face reset game.
-clickSmiley :: proc() {
-	face_loc: rl.Vector2 = {300, 20}
-	m_pos := rl.GetMousePosition()
-	if abs(face_loc.x - m_pos.x) <= 72 && abs(face_loc.y - m_pos.y) <= 72 {
-		initGame()
-	}
-}
-
 // Checks if hovering over smiley face
 hoverSmiley :: proc() -> bool {
-	face_loc: rl.Vector2 = {300, 20}
+	face_loc: rl.Vector2 = {336, 56}
 	m_pos := rl.GetMousePosition()
-	if rl.IsMouseButtonDown(.LEFT) {
-		return abs(face_loc.x - m_pos.x) <= 72 && abs(face_loc.y - m_pos.y) <= 72
-	}
-	return false
+	x_pos := abs(face_loc.x - m_pos.x)
+	y_pos := abs(face_loc.y - m_pos.y)
+	return x_pos <= 36 && y_pos <= 36
 }
 
 // checks how many bombs are left and also victory conditions
@@ -277,7 +268,6 @@ loadTextures :: proc() {
 	six_img := rl.LoadTexture("textures/six.png")
 	seven_img := rl.LoadTexture("textures/seven.png")
 	eight_img := rl.LoadTexture("textures/eight.png")
-
 
 	enum_map[.Clear] = tile_img
 	enum_map[.Flag] = flag_img
@@ -360,7 +350,9 @@ drawFaces :: proc() {
 		else do rl.DrawTexture(int_map[12], 300, 20, 255)
 	}
 
-	if hoverSmiley() do rl.DrawTexture(int_map[13], 300, 20, 255)
+	if rl.IsMouseButtonDown(.LEFT) {
+		if hoverSmiley() do rl.DrawTexture(int_map[13], 300, 20, 255)
+	}
 }
 
 // Draw Bomb Tracker
@@ -489,4 +481,3 @@ dfs :: proc(mat: ^[16][16]TileInfo, pos: [2]int, mp: ^map[[2]int]bool) {
 		dfs(mat, i, mp)
 	}
 }
-
