@@ -229,12 +229,13 @@ bombsAndVictory :: proc() {
 				j.value -= 1
 			}
 			if j.mark == .Flag do bombs += 1
-			if j.revealed do clear += 1
+			if j.revealed && j.value >= 0 do clear += 1
 		}
 	}
 
 	if clear == ROWS * COLS - 40 {
 		game_over = true
+
 		victory = true
 	}
 
@@ -480,4 +481,3 @@ dfs :: proc(mat: ^[16][16]TileInfo, pos: [2]int, mp: ^map[[2]int]bool) {
 		dfs(mat, i, mp)
 	}
 }
-
