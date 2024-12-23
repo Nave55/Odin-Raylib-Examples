@@ -36,6 +36,7 @@ SCREEN_HEIGHT :: 777
 COLS :: 16
 ROWS :: 16
 TILE_SIZE :: 40
+BOMBS :: 40
 
 // global variables
 game_over: bool
@@ -138,7 +139,7 @@ setGridVals :: proc(pos: [2]int) {
 
 	num := i32(pos.x * 16 + pos.y)
 
-	for len(x) < 40 {
+	for len(x) < BOMBS {
 		val := rl.GetRandomValue(0, 255)
 		for val == num do val = rl.GetRandomValue(0, 255)
 		x[val] = true
@@ -233,13 +234,13 @@ bombsAndVictory :: proc() {
 		}
 	}
 
-	if clear == ROWS * COLS - 40 {
+	if clear == ROWS * COLS - BOMBS {
 		game_over = true
 
 		victory = true
 	}
 
-	bombs_left = 40 - bombs
+	bombs_left = BOMBS - bombs
 }
 
 // Load all textures
@@ -481,3 +482,4 @@ dfs :: proc(mat: ^[16][16]TileInfo, pos: [2]int, mp: ^map[[2]int]bool) {
 		dfs(mat, i, mp)
 	}
 }
+
