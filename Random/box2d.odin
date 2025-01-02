@@ -169,8 +169,8 @@ gameControls :: proc() {
     if rl.IsKeyPressed(.SPACE) do pause = !pause
 
     // 'left click' add balls at mouse location and 'right click' add balls at mouse location
-    if rl.IsMouseButtonPressed(.LEFT) do boxEntityInit(rl.GetMousePosition(),  {ball_size, ball_size}, clr[c_mode[0]].color,  {1, 1}, true, "ball", .3, .2, .1)
-    if rl.IsMouseButtonPressed(.RIGHT) do boxEntityInit(rl.GetMousePosition(), {box_size, box_size},   clr[c_mode[1]].color,  {1, 1}, true, "box", .3, .2, .1)
+    if rl.IsMouseButtonPressed(.LEFT) do boxEntityInit(rl.GetMousePosition(),  {ball_size, ball_size}, clr[c_mode[0]].color,  {1, 1}, true, "ball", .3, 1, .1)
+    if rl.IsMouseButtonPressed(.RIGHT) do boxEntityInit(rl.GetMousePosition(), {box_size, box_size},   clr[c_mode[1]].color,  {1, 1}, true, "box", .3, 1, .1)
 
     // press 's' changes between boxes and balls for color and size changes
     if rl.IsKeyPressed(.S) {
@@ -226,7 +226,11 @@ drawGame :: proc() {
     for &i in entities {
         using i
         if i.type == "box" {
-            if move do rl.DrawRectangleV(rayPos(pos, dim, type, move), dim * 2, col)
+            if move {
+                rot := b2.Rot_GetAngle(b2.Body_GetRotation(body_id))
+                posi := rayPos(pos, dim, type, move)
+                rl.DrawRectanglePro({pos.x, pos.y, dim.x * 2, dim.y * 2}, {dim.x, dim.y}, rot*(180/3.14), col)
+            }
             else do rl.DrawRectangleV(rayPos(pos, dim, type, move), dim, col)
         }
         if i.type == "ball" do rl.DrawCircleV(rayPos(pos, dim, type, move),    dim.x,   col) 
