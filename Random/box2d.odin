@@ -8,7 +8,7 @@ package box
 *              's' alternates betweeen boxes and balls
 *              'up' and 'down' change the size of the balls and boxes depending on which is selected
 *              'c' changes the color of the boxes and balls depending on which is selected       
-*              'a' decreases time_step and 'b' decreases time_step
+*              'a' decreases time_step and 'b' increases time_step
 *              'space' stops all movement   
 *               'r' resets the simulation           
 *
