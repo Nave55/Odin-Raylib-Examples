@@ -233,7 +233,7 @@ drawGame :: proc() {
             }
             else do rl.DrawRectangleV(rayPos(pos, dim, type, move), dim, col)
         }
-        if i.type == "ball" do rl.DrawCircleV(rayPos(pos, dim, type, move),    dim.x,   col) 
+        if i.type == "ball" do rl.DrawCircleV(rayPos(pos, dim, type, move), dim.x, col) 
     }
 
     debugGame(selector,  rl.RED)
