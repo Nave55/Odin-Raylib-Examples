@@ -3,7 +3,6 @@ package box
 /*************************************************************************************************************
 *
 *   simple box2d implementation
-*   Odin Version - https://github.com/cr1sth0fer/odin-box2d
 *   
 *   controls - 'left click' adds balls, and 'right click' adds boxes
 *              's' alternates betweeen boxes and balls
