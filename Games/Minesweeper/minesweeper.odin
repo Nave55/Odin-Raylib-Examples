@@ -470,16 +470,18 @@ dfs :: proc(mat: ^[16][16]TileInfo, pos: [2]int, mp: ^map[[2]int]bool) {
 	val := fetchVal(mat, pos)
 
 	val.revealed = true
+	val.mark = .Clear
 	if val.value != 0 || pos in mp do return
 
 	mp[pos] = true
-	// fmt.println(pos)
 
 	inds, _ := nbrs(mat, pos)
 	for i in sa.slice(&inds) {
 		b := fetchVal(mat, i)
-		if b.value > 0 do b.revealed = true
+		if b.value > 0 {
+			b.revealed = true
+			b.mark = .Clear
+		}
 		dfs(mat, i, mp)
 	}
 }
-
