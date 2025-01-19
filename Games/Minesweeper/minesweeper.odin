@@ -178,7 +178,7 @@ unveilTile :: proc() {
 	}
 }
 
-// If hovering tile show tile as a clear empty tile.
+// Returns a tile pos if you are hovering a tile that hasn't been revealed
 hoverTile :: proc() -> (t_pos: [2]int) {
 	if rl.IsMouseButtonDown(.LEFT) {
 		m_pos := rl.GetMousePosition()
