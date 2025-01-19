@@ -155,7 +155,6 @@ setGridVals :: proc(pos: [2]int) {
 		}
 	}
 	setTileVals(&grid)
-	// printGridVals(&grid)
 }
 
 // Controls
@@ -174,7 +173,6 @@ unveilTile :: proc() {
 		if val.mark == .Clear {
 			dfs(&grid, t_pos, &visited)
 
-			// fmt.println(val)
 			if val.revealed && val.value == -1 do game_over = true
 		}
 	}
@@ -206,7 +204,6 @@ markTile :: proc() {
 				val.mark = .Clear
 			}
 		}
-		// fmt.println(val)
 	}
 }
 
