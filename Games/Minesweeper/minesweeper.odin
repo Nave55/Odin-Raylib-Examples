@@ -159,7 +159,7 @@ setGridVals :: proc(pos: [2]int) {
 
 // Controls
 
-// If left click release reveal tiles contents. 
+// Reveal tile. 
 unveilTile :: proc() {
 	m_pos := rl.GetMousePosition()
 	t_pos := getTilePos(m_pos)
@@ -187,7 +187,7 @@ hoverTile :: proc() -> (t_pos: [2]int) {
 			if fetchVal(&grid, t_pos).revealed == false do return
 		}
 	}
-	return {-100, -100}
+	return {-1, -1}
 }
 
 // If right click release cycle through clear, bomb, and question enum.
