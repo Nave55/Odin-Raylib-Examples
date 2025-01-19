@@ -233,7 +233,6 @@ bombsAndVictory :: proc() {
 
 	if clear == ROWS * COLS - BOMBS {
 		game_over = true
-
 		victory = true
 	}
 
@@ -286,7 +285,7 @@ loadTextures :: proc() {
 	int_map[13] = smile_clear_img
 }
 
-// Draw Textures and caluclates bomb number left and victory conditions.
+// Draw Textures
 drawTextures :: proc() {
 	for &i in grid {
 		for &j in i {
