@@ -183,7 +183,9 @@ hoverTile :: proc() -> (t_pos: [2]int) {
 	if rl.IsMouseButtonDown(.LEFT) {
 		m_pos := rl.GetMousePosition()
 		t_pos = getTilePos(m_pos)
-		if inBounds(t_pos, 16, 16) do return
+		if inBounds(t_pos, 16, 16) {
+			if fetchVal(&grid, t_pos).revealed == false do return
+		}
 	}
 	return {-100, -100}
 }
