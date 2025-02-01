@@ -48,6 +48,7 @@ main :: proc() {
 	defer rl.CloseWindow()
 
 	initGame()
+	rl.HideCursor()
 
 	for !rl.WindowShouldClose() {
 		updateGame()
@@ -255,25 +256,26 @@ updateSand :: proc(row, col: int) {
 		return
 	}
 
-	// **Swap with Water Directly Below**
-	if inBounds(row + 1, col) &&
-	   cells[row + 1][col].type == .Water &&
-	   !cells[row + 1][col].updated {
-		swapParticles(row, col, row + 1, col)
-		return
-	}
-
 	// **Attempt Diagonal Movement into Empty Spaces Only**
 	directions: [2]int = {-1, 1}
 	rand.shuffle(directions[:])
 	for dir in directions {
 		new_col := col + dir
+		if cells[row][new_col].type == .Rock do continue
 
 		// **Move Diagonally if the space is empty**
 		if isEmptyCell(row + 1, new_col) {
 			swapParticles(row, col, row + 1, new_col)
 			return
 		}
+	}
+
+	// **Swap with Water Directly Below**
+	if inBounds(row + 1, col) &&
+	   cells[row + 1][col].type == .Water &&
+	   !cells[row + 1][col].updated {
+		swapParticles(row, col, row + 1, col)
+		return
 	}
 
 	// **No Movement Possible**
@@ -303,8 +305,10 @@ updateWater :: proc(row, col: int) {
 	for dir in directions {
 		new_col := col + dir
 
+
 		// **Move Diagonally if Possible**
 		if isEmptyCell(row + 1, new_col) {
+			if cells[row][new_col].type == .Rock do continue
 			swapParticles(row, col, row + 1, new_col)
 			return
 		}
@@ -337,7 +341,6 @@ updateParticle :: proc(row, col: int) {
 	}
 }
 
-// Simulation loop
 particleSimulation :: proc() {
 	// **Reset update flags**
 	for &row in cells {
@@ -346,16 +349,38 @@ particleSimulation :: proc() {
 		}
 	}
 
-	for row := 0; row < ROWS; row += 1 {
+	// **First Pass: Update Sand Particles from Top to Bottom**
+	for row := ROWS - 1; row >= 0; row -= 1 {
 		if row %% 2 == 0 {
 			for col in 0 ..< COLS {
-				updateParticle(row, col)
+				if cells[row][col].type == .Sand {
+					updateSand(row, col)
+				}
 			}
 		} else {
 			for col := COLS - 1; col >= 0; col -= 1 {
-				updateParticle(row, col)
+				if cells[row][col].type == .Sand {
+					updateParticle(row, col)
+				}
 			}
 		}
 	}
-}
 
+	// **Second Pass: Update Water Particles from Bottom to Top**
+	for row := ROWS - 1; row >= 0; row -= 1 {
+		if row %% 2 == 0 {
+			for col in 0 ..< COLS {
+				if cells[row][col].type == .Water {
+					updateWater(row, col)
+				}
+			}
+		} else {
+			for col := COLS - 1; col >= 0; col -= 1 {
+				if cells[row][col].type == .Water {
+					updateParticle(row, col)
+				}
+			}
+
+		}
+	}
+}
