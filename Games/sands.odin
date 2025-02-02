@@ -2,7 +2,7 @@ package falling_sands
 
 import "core:fmt"
 import "core:math/rand"
-import "core:mem"
+// import "core:mem"
 import rl "vendor:raylib"
 
 Particles :: enum {
@@ -103,12 +103,12 @@ controls :: proc() {
 	}
 
 	if rl.IsKeyPressed(.A) {
-		brush_size += 1
+		brush_size *= 2
 	}
 
 	if rl.IsKeyPressed(.D) {
 		if brush_size > 1 {
-			brush_size -= 1
+			brush_size /= 2
 		}
 	}
 }
@@ -202,7 +202,7 @@ addParticle :: proc(row, col: int, type: Particles) {
 	if isEmptyCell(row, col) {
 		rate := setDispRate(cells[row][col])
 		if type == .Sand || type == .Water {
-			if rand.float32() < 0.30 {
+			if rand.float32() < 0.15 {
 				cells[row][col] = Particle{setParticleColor(type), type, false, rate}
 			}
 		} else {
@@ -288,14 +288,37 @@ swapParticles :: proc(row1, col1, row2, col2: int) {
 	}
 }
 
-// Update sand particle with desired logic
+moveParticle :: proc(row, col: int, type: rune, dirs: []int = {}) {
+	switch type {
+	case 'b':
+		if isEmptyCell(row + 1, col) {
+			swapParticles(row, col, row + 1, col)
+		}
+	case 'd':
+		for dir in dirs {
+			new_col := col + dir
 
+			if !inBounds(row, new_col) || cells[row][new_col].type == .Rock do continue
+
+			// **Move Diagonally if the space is empty**
+			if isEmptyCell(row + 1, new_col) {
+				swapParticles(row, col, row + 1, new_col)
+				return
+			}
+		}
+	case 'h':
+		for dir in dirs {
+			dispMovement(row, col, dir)
+		}
+	}
+}
+
+// Update sand particle with desired logic
 updateSand :: proc(row, col: int) {
 	if !inBounds(row, col) || cells[row][col].type != .Sand {
 		return
 	} else {
 		cells[row][col].disp_rate = setDispRate(cells[row][col])
-		// fmt.println(cells[row][col])
 	}
 
 	if cells[row][col].updated {
@@ -303,25 +326,13 @@ updateSand :: proc(row, col: int) {
 	}
 
 	// **Attempt to Move Down**
-	if isEmptyCell(row + 1, col) {
-		swapParticles(row, col, row + 1, col)
-		return
-	}
+	moveParticle(row, col, 'b')
 
 	// **Attempt Diagonal Movement into Empty Spaces Only**
-	directions: [2]int = {-1, 1}
-	rand.shuffle(directions[:])
-	for dir in directions {
-		new_col := col + dir
+	directions: []int = {-1, 1}
+	rand.shuffle(directions)
 
-		if !inBounds(row, new_col) || cells[row][new_col].type == .Rock do continue
-
-		// **Move Diagonally if the space is empty**
-		if isEmptyCell(row + 1, new_col) {
-			swapParticles(row, col, row + 1, new_col)
-			return
-		}
-	}
+	moveParticle(row, col, 'd', directions)
 
 	// **Swap with Water Directly Below**
 	if inBounds(row + 1, col) &&
@@ -341,43 +352,23 @@ updateWater :: proc(row, col: int) {
 		return
 	} else {
 		cells[row][col].disp_rate = setDispRate(cells[row][col])
-		// fmt.println(cells[row][col])
 	}
 
 	if cells[row][col].updated {
 		return // Skip if already updated
 	}
 
-	directions := [2]int{-1, 1}
-	rand.shuffle(directions[:])
-
 	// **Attempt to Move Down**
-	if isEmptyCell(row + 1, col) {
-		swapParticles(row, col, row + 1, col)
-		return
-	}
+	moveParticle(row, col, 'b')
+
+	directions := []int{-1, 1}
+	rand.shuffle(directions)
 
 	// **Attempt Diagonal Movement**
-	for dir in directions {
-		new_col := col + dir
+	moveParticle(row, col, 'd', directions)
 
-
-		// **Move Diagonally if Possible**
-		if isEmptyCell(row + 1, new_col) {
-			if inBounds(row, new_col) {
-				if cells[row][new_col].type == .Rock do continue
-			}
-			swapParticles(row, col, row + 1, new_col)
-			return
-
-		}
-
-	}
-
-	for dir in directions {
-		dispMovement(row, col, dir)
-	}
-
+	// **Move Horizontally if Possible**
+	moveParticle(row, col, 'h', directions)
 
 	// **No Movement Possible**
 	cells[row][col].updated = true
@@ -400,6 +391,24 @@ updateParticle :: proc(row, col: int) {
 	}
 }
 
+simulationPasses :: proc(type: Particles) {
+	for row := ROWS - 1; row >= 0; row -= 1 {
+		if row %% 2 == 0 {
+			for col in 0 ..< COLS {
+				if cells[row][col].type == type {
+					updateParticle(row, col)
+				}
+			}
+		} else {
+			for col := COLS - 1; col >= 0; col -= 1 {
+				if cells[row][col].type == type {
+					updateParticle(row, col)
+				}
+			}
+		}
+	}
+}
+
 particleSimulation :: proc() {
 	// **Reset update flags**
 	for &row in cells {
@@ -409,37 +418,9 @@ particleSimulation :: proc() {
 	}
 
 	// **First Pass: Update Sand Particles**
-	for row := ROWS - 1; row >= 0; row -= 1 {
-		if row %% 2 == 0 {
-			for col in 0 ..< COLS {
-				if cells[row][col].type == .Sand {
-					updateParticle(row, col)
-				}
-			}
-		} else {
-			for col := COLS - 1; col >= 0; col -= 1 {
-				if cells[row][col].type == .Sand {
-					updateParticle(row, col)
-				}
-			}
-		}
-	}
+	simulationPasses(.Sand)
 
 	// **Second Pass: Update Water Particles**
-	for row := ROWS - 1; row >= 0; row -= 1 {
-		if row %% 2 == 0 {
-			for col in 0 ..< COLS {
-				if cells[row][col].type == .Water {
-					updateParticle(row, col)
-				}
-			}
-		} else {
-			for col := COLS - 1; col >= 0; col -= 1 {
-				if cells[row][col].type == .Water {
-					updateParticle(row, col)
-				}
-			}
-
-		}
-	}
+	simulationPasses(.Water)
 }
+
