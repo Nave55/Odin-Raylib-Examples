@@ -26,7 +26,6 @@ FPS :: 120
 CELL_SIZE :: 4
 ROWS: int : int(SCREEN_HEIGHT / CELL_SIZE)
 COLS: int : int(SCREEN_WIDTH / CELL_SIZE)
-BRUSH_SIZE :: 3
 
 // Colors
 GREY :: rl.Color{29, 29, 29, 255}
@@ -42,6 +41,7 @@ p_num: u8
 m_pos: rl.Vector2
 paused: bool
 showFPS: bool
+brush_size: int
 
 main :: proc() {
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Falling Sands Simulation")
@@ -68,6 +68,7 @@ initGame :: proc() {
 	p_type = {.Sand, .Rock, .Water}
 	paused = false
 	showFPS = false
+	brush_size = 3
 }
 
 // Handle controls
@@ -99,6 +100,16 @@ controls :: proc() {
 
 	if rl.IsKeyPressed(.F) {
 		showFPS = !showFPS
+	}
+
+	if rl.IsKeyPressed(.A) {
+		brush_size += 1
+	}
+
+	if rl.IsKeyPressed(.D) {
+		if brush_size > 1 {
+			brush_size -= 1
+		}
 	}
 }
 
@@ -149,7 +160,7 @@ drawBrush :: proc() {
 	col := int(m_pos.x / CELL_SIZE)
 	row := int(m_pos.y / CELL_SIZE)
 
-	brush_size := i32(BRUSH_SIZE * CELL_SIZE)
+	brush_size := i32(brush_size * CELL_SIZE)
 	color: rl.Color
 
 	#partial switch p_type[p_num] {
@@ -241,8 +252,8 @@ dispMovement :: proc(row, col, mod: int) {
 }
 
 applyBrush :: proc(row, col: int, type: rune, particle: Particles = .None) {
-	for r in 0 ..< BRUSH_SIZE {
-		for c in 0 ..< BRUSH_SIZE {
+	for r in 0 ..< brush_size {
+		for c in 0 ..< brush_size {
 			c_row := row + r
 			c_col := col + c
 
