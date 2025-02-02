@@ -13,9 +13,10 @@ Particles :: enum {
 }
 
 Particle :: struct {
-	color:   rl.Color,
-	type:    Particles,
-	updated: bool, // Flag to prevent multiple updates per frame
+	color:     rl.Color,
+	type:      Particles,
+	updated:   bool, // Flag to prevent multiple updates per frame
+	disp_rate: int,
 }
 
 // Constants
@@ -59,7 +60,7 @@ main :: proc() {
 initGame :: proc() {
 	for &row in cells {
 		for &cell in row {
-			cell = Particle{LIGHT_GREY, .None, false}
+			cell = Particle{LIGHT_GREY, .None, false, 0}
 		}
 	}
 
@@ -188,19 +189,54 @@ setParticleColor :: proc(particle: Particles) -> rl.Color {
 
 addParticle :: proc(row, col: int, type: Particles) {
 	if isEmptyCell(row, col) {
+		rate := setDispRate(cells[row][col])
 		if type == .Sand || type == .Water {
 			if rand.float32() < 0.30 {
-				cells[row][col] = Particle{setParticleColor(type), type, false}
+				cells[row][col] = Particle{setParticleColor(type), type, false, rate}
 			}
 		} else {
-			cells[row][col] = Particle{setParticleColor(type), type, false}
+			cells[row][col] = Particle{setParticleColor(type), type, false, rate}
 		}
 	}
 }
 
 removeParticle :: proc(row, col: int) {
 	if !isEmptyCell(row, col) {
-		cells[row][col] = Particle{LIGHT_GREY, .None, false}
+		cells[row][col] = Particle{LIGHT_GREY, .None, false, 0}
+	}
+}
+
+setDispRate :: proc(particle: Particle) -> int {
+	#partial switch particle.type {
+	case .None:
+		return 0
+	case .Water:
+		return 5
+	case .Sand:
+		return 1
+	case .Rock:
+		return 0
+	case:
+		return 0
+	}
+	return 0
+}
+
+dispMovement :: proc(row, col, mod: int) {
+	col := col
+	moves := 0
+	max_moves := cells[row][col].disp_rate
+
+	for moves < max_moves {
+		cell := cells[row][col]
+		new_col := col + mod
+		if isEmptyCell(row, new_col) {
+			swapParticles(row, col, row, new_col)
+			col = new_col
+			moves += 1
+		} else {
+			break
+		}
 	}
 }
 
@@ -231,12 +267,14 @@ randColor :: proc(h1, h2, s1, s2, v1, v2: f32) -> rl.Color {
 
 // Swap two particles
 swapParticles :: proc(row1, col1, row2, col2: int) {
-	temp := cells[row1][col1]
-	cells[row1][col1] = cells[row2][col2]
-	cells[row2][col2] = temp
+	if inBounds(row1, col1) && inBounds(row2, col2) {
+		temp := cells[row1][col1]
+		cells[row1][col1] = cells[row2][col2]
+		cells[row2][col2] = temp
 
-	cells[row1][col1].updated = true
-	cells[row2][col2].updated = true
+		cells[row1][col1].updated = true
+		cells[row2][col2].updated = true
+	}
 }
 
 // Update sand particle with desired logic
@@ -244,6 +282,9 @@ swapParticles :: proc(row1, col1, row2, col2: int) {
 updateSand :: proc(row, col: int) {
 	if !inBounds(row, col) || cells[row][col].type != .Sand {
 		return
+	} else {
+		cells[row][col].disp_rate = setDispRate(cells[row][col])
+		// fmt.println(cells[row][col])
 	}
 
 	if cells[row][col].updated {
@@ -261,7 +302,8 @@ updateSand :: proc(row, col: int) {
 	rand.shuffle(directions[:])
 	for dir in directions {
 		new_col := col + dir
-		if cells[row][new_col].type == .Rock do continue
+
+		if !inBounds(row, new_col) || cells[row][new_col].type == .Rock do continue
 
 		// **Move Diagonally if the space is empty**
 		if isEmptyCell(row + 1, new_col) {
@@ -286,6 +328,9 @@ updateSand :: proc(row, col: int) {
 updateWater :: proc(row, col: int) {
 	if !inBounds(row, col) || cells[row][col].type != .Water {
 		return
+	} else {
+		cells[row][col].disp_rate = setDispRate(cells[row][col])
+		// fmt.println(cells[row][col])
 	}
 
 	if cells[row][col].updated {
@@ -308,17 +353,20 @@ updateWater :: proc(row, col: int) {
 
 		// **Move Diagonally if Possible**
 		if isEmptyCell(row + 1, new_col) {
-			if cells[row][new_col].type == .Rock do continue
+			if inBounds(row, new_col) {
+				if cells[row][new_col].type == .Rock do continue
+			}
 			swapParticles(row, col, row + 1, new_col)
 			return
+
 		}
 
-		// **Move Sideways if Possible**
-		if isEmptyCell(row, new_col) {
-			swapParticles(row, col, row, new_col)
-			return
-		}
 	}
+
+	for dir in directions {
+		dispMovement(row, col, dir)
+	}
+
 
 	// **No Movement Possible**
 	cells[row][col].updated = true
@@ -349,12 +397,12 @@ particleSimulation :: proc() {
 		}
 	}
 
-	// **First Pass: Update Sand Particles from Top to Bottom**
+	// **First Pass: Update Sand Particles**
 	for row := ROWS - 1; row >= 0; row -= 1 {
 		if row %% 2 == 0 {
 			for col in 0 ..< COLS {
 				if cells[row][col].type == .Sand {
-					updateSand(row, col)
+					updateParticle(row, col)
 				}
 			}
 		} else {
@@ -366,12 +414,12 @@ particleSimulation :: proc() {
 		}
 	}
 
-	// **Second Pass: Update Water Particles from Bottom to Top**
+	// **Second Pass: Update Water Particles**
 	for row := ROWS - 1; row >= 0; row -= 1 {
 		if row %% 2 == 0 {
 			for col in 0 ..< COLS {
 				if cells[row][col].type == .Water {
-					updateWater(row, col)
+					updateParticle(row, col)
 				}
 			}
 		} else {
