@@ -246,7 +246,7 @@ dispMovement :: proc(row, col, mod: int) {
 			col = new_col
 			moves += 1
 		} else {
-			break
+			return
 		}
 	}
 }
@@ -289,6 +289,10 @@ swapParticles :: proc(row1, col1, row2, col2: int) {
 }
 
 moveParticle :: proc(row, col: int, type: rune, dirs: []int = {}) {
+	if isEmptyCell(row, col) {
+		if cells[row][col].updated do return
+	}
+
 	switch type {
 	case 'b':
 		if isEmptyCell(row + 1, col) {
@@ -303,7 +307,6 @@ moveParticle :: proc(row, col: int, type: rune, dirs: []int = {}) {
 			// **Move Diagonally if the space is empty**
 			if isEmptyCell(row + 1, new_col) {
 				swapParticles(row, col, row + 1, new_col)
-				return
 			}
 		}
 	case 'h':
