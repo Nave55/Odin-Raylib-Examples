@@ -10,6 +10,7 @@ Particles :: enum {
 	Sand,
 	Rock,
 	Water,
+	Steam,
 }
 
 Particle :: struct {
@@ -17,6 +18,7 @@ Particle :: struct {
 	type:      Particles,
 	updated:   bool, // Flag to prevent multiple updates per frame
 	disp_rate: int,
+	health:    f32,
 }
 
 // Constants
@@ -33,10 +35,11 @@ LIGHT_GREY :: rl.Color{55, 55, 55, 255}
 SAND_COLOR :: rl.Color{167, 137, 82, 255}
 ROCK_COLOR :: rl.Color{115, 104, 101, 255}
 WATER_COLOR :: rl.Color{43, 103, 179, 255}
+STEAM_COLOR :: rl.Color{180, 156, 151, 255}
 
 // Variables
 cells: [ROWS][COLS]Particle
-p_type: [3]Particles
+p_type: [4]Particles
 p_num: u8
 m_pos: rl.Vector2
 paused: bool
@@ -51,21 +54,19 @@ main :: proc() {
 	initGame()
 	rl.HideCursor()
 
-	for !rl.WindowShouldClose() {
-		updateGame()
-	}
+	for !rl.WindowShouldClose() do updateGame()
 }
 
 // Initialize game state
 initGame :: proc() {
 	for &row in cells {
 		for &cell in row {
-			cell = Particle{LIGHT_GREY, .None, false, 0}
+			cell = Particle{LIGHT_GREY, .None, false, 0, 1}
 		}
 	}
 
 	p_num = 0
-	p_type = {.Sand, .Rock, .Water}
+	p_type = {.Sand, .Rock, .Water, .Steam}
 	paused = false
 	showFPS = false
 	brush_size = 3
@@ -155,7 +156,7 @@ drawGrid :: proc() {
 	}
 }
 
-// Draw brush preview
+// Draw brush 
 drawBrush :: proc() {
 	col := int(m_pos.x / CELL_SIZE)
 	row := int(m_pos.y / CELL_SIZE)
@@ -170,6 +171,8 @@ drawBrush :: proc() {
 		color = ROCK_COLOR
 	case .Water:
 		color = WATER_COLOR
+	case .Steam:
+		color = STEAM_COLOR
 	}
 
 	rl.DrawRectangle(i32(col * CELL_SIZE), i32(row * CELL_SIZE), brush_size, brush_size, color)
@@ -180,10 +183,12 @@ inBounds :: proc(row, col: int) -> bool {
 	return (row >= 0 && row < ROWS) && (col >= 0 && col < COLS)
 }
 
+// checks if cells is in bounds and not .None
 isEmptyCell :: proc(row, col: int) -> bool {
 	return inBounds(row, col) && cells[row][col].type == .None
 }
 
+// set particles color
 setParticleColor :: proc(particle: Particles) -> rl.Color {
 	#partial switch particle {
 	case .None:
@@ -194,29 +199,34 @@ setParticleColor :: proc(particle: Particles) -> rl.Color {
 		return randColor(8, 12, .1, .15, .3, .5)
 	case .Water:
 		return randColor(213, 214, .75, .76, .70, .71)
+	case .Steam:
+		return randColor(10, 18, .05, .15, .60, .64)
 	}
 	return LIGHT_GREY
 }
 
+// adds particles
 addParticle :: proc(row, col: int, type: Particles) {
 	if isEmptyCell(row, col) {
 		rate := setDispRate(cells[row][col])
-		if type == .Sand || type == .Water {
+		if type == .Sand || type == .Water || type == .Steam {
 			if rand.float32() < 0.15 {
-				cells[row][col] = Particle{setParticleColor(type), type, false, rate}
+				cells[row][col] = Particle{setParticleColor(type), type, false, rate, 1}
 			}
 		} else {
-			cells[row][col] = Particle{setParticleColor(type), type, false, rate}
+			cells[row][col] = Particle{setParticleColor(type), type, false, rate, 1}
 		}
 	}
 }
 
+// removes particles
 removeParticle :: proc(row, col: int) {
 	if !isEmptyCell(row, col) {
-		cells[row][col] = Particle{LIGHT_GREY, .None, false, 0}
+		cells[row][col] = Particle{LIGHT_GREY, .None, false, 0, 0}
 	}
 }
 
+// sets particles disp rate
 setDispRate :: proc(particle: Particle) -> int {
 	#partial switch particle.type {
 	case .None:
@@ -227,12 +237,15 @@ setDispRate :: proc(particle: Particle) -> int {
 		return 1
 	case .Rock:
 		return 0
+	case .Steam:
+		return 7
 	case:
 		return 0
 	}
 	return 0
 }
 
+// controls movement horizontally based on the disp_rate
 dispMovement :: proc(row, col, mod: int) {
 	col := col
 	moves := 0
@@ -251,6 +264,21 @@ dispMovement :: proc(row, col, mod: int) {
 	}
 }
 
+// change particle
+changeParticle :: proc(row, col, r, c, chance: int) {
+	// **Condense with Water Above**
+	if inBounds(row + r, col + c) {
+		s_part := cells[row + r][col + c]
+
+		if s_part.type == .Water {
+			removeParticle(row, col)
+			if chance == 0 do addParticle(row, col, .Water)
+		}
+	}
+
+}
+
+// brush that allows you to add or remove particles
 applyBrush :: proc(row, col: int, type: rune, particle: Particles = .None) {
 	for r in 0 ..< brush_size {
 		for c in 0 ..< brush_size {
@@ -268,6 +296,7 @@ applyBrush :: proc(row, col: int, type: rune, particle: Particles = .None) {
 	}
 }
 
+// Creates rand collors using hsv values
 randColor :: proc(h1, h2, s1, s2, v1, v2: f32) -> rl.Color {
 	hue := rand.float32_uniform(h1, h2)
 	saturation := rand.float32_uniform(s1, s2)
@@ -288,6 +317,7 @@ swapParticles :: proc(row1, col1, row2, col2: int) {
 	}
 }
 
+// Moves particles. If 'b' move down, if 'd' move diagonally, if 'h' move horizontally 
 moveParticle :: proc(row, col: int, type: rune, dirs: []int = {}) {
 	if isEmptyCell(row, col) {
 		if cells[row][col].updated do return
@@ -298,6 +328,10 @@ moveParticle :: proc(row, col: int, type: rune, dirs: []int = {}) {
 		if isEmptyCell(row + 1, col) {
 			swapParticles(row, col, row + 1, col)
 		}
+	case 'a':
+		if isEmptyCell(row - 1, col) {
+			swapParticles(row, col, row - 1, col)
+		}
 	case 'd':
 		for dir in dirs {
 			new_col := col + dir
@@ -307,6 +341,17 @@ moveParticle :: proc(row, col: int, type: rune, dirs: []int = {}) {
 			// **Move Diagonally if the space is empty**
 			if isEmptyCell(row + 1, new_col) {
 				swapParticles(row, col, row + 1, new_col)
+			}
+		}
+	case 'r':
+		for dir in dirs {
+			new_col := col + dir
+
+			if !inBounds(row, new_col) || cells[row][new_col].type == .Rock do continue
+
+			// **Move Diagonally if the space is empty**
+			if isEmptyCell(row - 1, new_col) {
+				swapParticles(row, col, row - 1, new_col)
 			}
 		}
 	case 'h':
@@ -322,6 +367,15 @@ updateSand :: proc(row, col: int) {
 		return
 	} else {
 		cells[row][col].disp_rate = setDispRate(cells[row][col])
+
+		// **Swap with Water Directly Below**
+		if inBounds(row + 1, col) {
+			s_part := cells[row + 1][col]
+
+			if (s_part.type == .Water || s_part.type == .Steam) && !s_part.updated {
+				swapParticles(row, col, row + 1, col)
+			}
+		}
 	}
 
 	if cells[row][col].updated {
@@ -337,13 +391,6 @@ updateSand :: proc(row, col: int) {
 
 	moveParticle(row, col, 'd', directions)
 
-	// **Swap with Water Directly Below**
-	if inBounds(row + 1, col) &&
-	   cells[row + 1][col].type == .Water &&
-	   !cells[row + 1][col].updated {
-		swapParticles(row, col, row + 1, col)
-		return
-	}
 
 	// **No Movement Possible**
 	cells[row][col].updated = true
@@ -377,6 +424,54 @@ updateWater :: proc(row, col: int) {
 	cells[row][col].updated = true
 }
 
+// Update steam particle
+updateSteam :: proc(row, col: int) {
+	if !inBounds(row, col) || cells[row][col].type != .Steam {
+		return
+	} else {
+		// fmt.println(cells[row][col].disp_rate)
+		cells[row][col].disp_rate = setDispRate(cells[row][col])
+		cells[row][col].health -= rand.float32_uniform(.00001, .001)
+
+		{
+			side := rand.choice(([]int){-1, 1})
+			chance := rand.int_max(20)
+			// **Condense with Water Above**
+			changeParticle(row, col, -1, 0, chance)
+			// **Condense with Water Side**
+			changeParticle(row, col, 0, side, chance)
+			// **Condense with Water Side**
+			changeParticle(row, col, 0, -side, chance)
+		}
+	}
+
+	if cells[row][col].updated {
+		return // Skip if already updated
+	}
+
+	if cells[row][col].health <= 0 {
+		removeParticle(row, col)
+		if rand.int_max(20) == 0 do addParticle(row, col, .Water)
+	}
+
+	// **Attempt to Move Up**
+	moveParticle(row, col, 'a')
+
+	// **Attempt Diagonal Movement**
+	directions := []int{-1, 1}
+	rand.shuffle(directions)
+
+	moveParticle(row, col, 'd', directions)
+	rand.shuffle(directions)
+	moveParticle(row, col, 'r', directions)
+
+	// **Move Horizontally if Possible**
+	moveParticle(row, col, 'h', directions)
+
+	// **No Movement Possible**
+	cells[row][col].updated = true
+}
+
 // Update particle positions
 updateParticle :: proc(row, col: int) {
 	particle := &cells[row][col]
@@ -389,11 +484,14 @@ updateParticle :: proc(row, col: int) {
 		updateSand(row, col)
 	case .Water:
 		updateWater(row, col)
+	case .Steam:
+		updateSteam(row, col)
 	case:
 		particle.updated = true
 	}
 }
 
+// Simulation passes for particles
 simulationPasses :: proc(type: Particles) {
 	for row := ROWS - 1; row >= 0; row -= 1 {
 		if row %% 2 == 0 {
@@ -412,6 +510,7 @@ simulationPasses :: proc(type: Particles) {
 	}
 }
 
+// run simulation
 particleSimulation :: proc() {
 	// **Reset update flags**
 	for &row in cells {
@@ -425,5 +524,8 @@ particleSimulation :: proc() {
 
 	// **Second Pass: Update Water Particles**
 	simulationPasses(.Water)
+
+	// **Third Pass: Update Steam Particles**
+	simulationPasses(.Steam)
 }
 
