@@ -14,11 +14,11 @@ Particles :: enum {
 }
 
 Particle :: struct {
-	color:     rl.Color,
-	type:      Particles,
+	color:     rl.Color, // color of the particle
+	type:      Particles, // type of the particle
 	updated:   bool, // Flag to prevent multiple updates per frame
-	disp_rate: int,
-	health:    f32,
+	disp_rate: int, // how quickly the particle moves horizontally
+	health:    f32, // Health of the particle
 }
 
 // Constants
@@ -38,13 +38,13 @@ WATER_COLOR :: rl.Color{43, 103, 179, 255}
 STEAM_COLOR :: rl.Color{180, 156, 151, 255}
 
 // Variables
-cells: [ROWS][COLS]Particle
-p_type: [4]Particles
-p_num: u8
-m_pos: rl.Vector2
-paused: bool
-showFPS: bool
-brush_size: int
+cells: [ROWS][COLS]Particle // array for all the particles on screen
+p_type: [4]Particles // array containing all the particle enum types
+p_num: u8 // index for the p_type array 
+m_pos: rl.Vector2 // mouse position
+paused: bool // checks if paused
+showFPS: bool // shows the fps
+brush_size: int // size of the brush
 
 main :: proc() {
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Falling Sands Simulation")
@@ -178,14 +178,30 @@ drawBrush :: proc() {
 	rl.DrawRectangle(i32(col * CELL_SIZE), i32(row * CELL_SIZE), brush_size, brush_size, color)
 }
 
-// Utility functions
-inBounds :: proc(row, col: int) -> bool {
-	return (row >= 0 && row < ROWS) && (col >= 0 && col < COLS)
+// brush that allows you to add or remove particles
+applyBrush :: proc(row, col: int, type: rune, particle: Particles = .None) {
+	for r in 0 ..< brush_size {
+		for c in 0 ..< brush_size {
+			c_row := row + r
+			c_col := col + c
+
+			if inBounds(c_row, c_col) {
+				if type == 'e' {
+					removeParticle(c_row, c_col)
+				} else if type == 'a' {
+					addParticle(c_row, c_col, particle)
+				}
+			}
+		}
+	}
 }
 
-// checks if cells is in bounds and not .None
-isEmptyCell :: proc(row, col: int) -> bool {
-	return inBounds(row, col) && cells[row][col].type == .None
+// Creates rand collors using hsv values
+randColor :: proc(h1, h2, s1, s2, v1, v2: f32) -> rl.Color {
+	hue := rand.float32_uniform(h1, h2)
+	saturation := rand.float32_uniform(s1, s2)
+	value := rand.float32_uniform(v1, v2)
+	return rl.ColorFromHSV(hue, saturation, value)
 }
 
 // set particles color
@@ -203,6 +219,16 @@ setParticleColor :: proc(particle: Particles) -> rl.Color {
 		return randColor(10, 18, .05, .15, .60, .64)
 	}
 	return LIGHT_GREY
+}
+
+// Utility functions
+inBounds :: proc(row, col: int) -> bool {
+	return (row >= 0 && row < ROWS) && (col >= 0 && col < COLS)
+}
+
+// checks if cells is in bounds and not .None
+isEmptyCell :: proc(row, col: int) -> bool {
+	return inBounds(row, col) && cells[row][col].type == .None
 }
 
 // adds particles
@@ -277,33 +303,6 @@ changeParticle :: proc(row, col, r, c, chance: int) {
 	}
 
 }
-
-// brush that allows you to add or remove particles
-applyBrush :: proc(row, col: int, type: rune, particle: Particles = .None) {
-	for r in 0 ..< brush_size {
-		for c in 0 ..< brush_size {
-			c_row := row + r
-			c_col := col + c
-
-			if inBounds(c_row, c_col) {
-				if type == 'e' {
-					removeParticle(c_row, c_col)
-				} else if type == 'a' {
-					addParticle(c_row, c_col, particle)
-				}
-			}
-		}
-	}
-}
-
-// Creates rand collors using hsv values
-randColor :: proc(h1, h2, s1, s2, v1, v2: f32) -> rl.Color {
-	hue := rand.float32_uniform(h1, h2)
-	saturation := rand.float32_uniform(s1, s2)
-	value := rand.float32_uniform(v1, v2)
-	return rl.ColorFromHSV(hue, saturation, value)
-}
-
 
 // Swap two particles
 swapParticles :: proc(row1, col1, row2, col2: int) {
@@ -433,22 +432,22 @@ updateSteam :: proc(row, col: int) {
 		cells[row][col].disp_rate = setDispRate(cells[row][col])
 		cells[row][col].health -= rand.float32_uniform(.00001, .001)
 
-		{
-			side := rand.choice(([]int){-1, 1})
-			chance := rand.int_max(20)
-			// **Condense with Water Above**
-			changeParticle(row, col, -1, 0, chance)
-			// **Condense with Water Side**
-			changeParticle(row, col, 0, side, chance)
-			// **Condense with Water Side**
-			changeParticle(row, col, 0, -side, chance)
-		}
+		// Condense to water 
+		side := rand.choice(([]int){-1, 1})
+		chance := rand.int_max(20)
+		// **Condense with Water Above**
+		changeParticle(row, col, -1, 0, chance)
+		// **Condense with Water Side**
+		changeParticle(row, col, 0, side, chance)
+		// **Condense with Water Side**
+		changeParticle(row, col, 0, -side, chance)
 	}
 
 	if cells[row][col].updated {
 		return // Skip if already updated
 	}
 
+	// chance to condense on health 0
 	if cells[row][col].health <= 0 {
 		removeParticle(row, col)
 		if rand.int_max(20) == 0 do addParticle(row, col, .Water)
@@ -528,4 +527,3 @@ particleSimulation :: proc() {
 	// **Third Pass: Update Steam Particles**
 	simulationPasses(.Steam)
 }
-
