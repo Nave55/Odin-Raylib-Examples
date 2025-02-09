@@ -37,6 +37,7 @@ SAND_COLOR :: rl.Color{167, 137, 82, 255}
 ROCK_COLOR :: rl.Color{115, 104, 101, 255}
 WATER_COLOR :: rl.Color{43, 103, 179, 255}
 STEAM_COLOR :: rl.Color{180, 156, 151, 255}
+FIRE_COLOR :: rl.Color{197, 100, 12, 255}
 
 // Variables
 cells: [ROWS][COLS]Particle // array for all the particles on screen
@@ -175,7 +176,7 @@ drawBrush :: proc() {
 	case .Steam:
 		color = STEAM_COLOR
 	case .Fire:
-		color = rl.ORANGE
+		color = FIRE_COLOR
 	}
 
 	rl.DrawRectangle(i32(col * CELL_SIZE), i32(row * CELL_SIZE), brush_size, brush_size, color)
@@ -383,7 +384,7 @@ updateSand :: proc(row, col: int) {
 	} else {
 		cells[row][col].disp_rate = setDispRate(cells[row][col])
 
-		// **Swap with Water Directly Below**
+		// **Swap with Water and Steam Directly Below**
 		if inBounds(row + 1, col) {
 			s_part := cells[row + 1][col]
 
@@ -505,17 +506,20 @@ updateSteam :: proc(row, col: int) {
 fireInteractions :: proc(row, col: int) {
 	side := rand.choice(([]int){-1, 1})
 
+	// Steam
+	changeParticle(row, col, -1, 0, 0, .Steam, .None, false) // Above
+	changeParticle(row, col, 1, 0, 0, .Steam, .None, false) // Below
+	changeParticle(row, col, 0, side, 0, .Steam, .None, false) // Side
+	changeParticle(row, col, 0, -side, 0, .Steam, .None, false) // Side
+
 	// Water
 	changeParticle(row, col, -1, 0, 0, .Water, .Steam) // Above
 	changeParticle(row, col, 1, 0, 0, .Water, .Steam) // Below
 	changeParticle(row, col, 0, side, 0, .Water, .Steam) // Side
 	changeParticle(row, col, 0, -side, 0, .Water, .Steam) // Side
 
-	// Steam
-	changeParticle(row, col, -1, 0, 0, .Steam, .None, false) // Above
-	changeParticle(row, col, 1, 0, 0, .Steam, .None, false) // Below
-	changeParticle(row, col, 0, side, 0, .Steam, .None, false) // Side
-	changeParticle(row, col, 0, -side, 0, .Steam, .None, false) // Side
+	// Sand
+	changeParticle(row, col, -1, 0, 0, .Sand, .None, true, false) // Above
 }
 
 fireMovement :: proc(row, col: int) {
@@ -624,4 +628,3 @@ particleSimulation :: proc() {
 	// **Third Pass: Update Fire Particles**
 	simulationPasses(.Fire)
 }
-
