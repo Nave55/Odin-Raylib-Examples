@@ -1,6 +1,7 @@
 package falling_sands
 
 import "core:fmt"
+import "core:math"
 import "core:math/rand"
 // import "core:mem"
 import rl "vendor:raylib"
@@ -44,6 +45,7 @@ cells: [ROWS][COLS]Particle // array for all the particles on screen
 p_type: [5]Particles // array containing all the particle enum types
 p_num: u8 // index for the p_type array 
 m_pos: rl.Vector2 // mouse position
+last_m_pos: rl.Vector2 // mouse position
 paused: bool // checks if paused
 showFPS: bool // shows the fps
 brush_size: int // size of the brush
@@ -72,6 +74,8 @@ initGame :: proc() {
 	paused = false
 	showFPS = false
 	brush_size = 3
+	m_pos = {0, 0}
+	last_m_pos = {0, 0}
 }
 
 // Handle controls
@@ -80,12 +84,27 @@ controls :: proc() {
 	row := int(m_pos.y / CELL_SIZE)
 	col := int(m_pos.x / CELL_SIZE)
 
-	if inBounds(row, col) {
-		if rl.IsMouseButtonDown(.LEFT) {
-			applyBrush(row, col, 'a', p_type[p_num])
-		}
-		if rl.IsMouseButtonPressed(.RIGHT) {
-			applyBrush(row, col, 'e')
+	// Interpolate between the last and current mouse positions
+	steps := math.max(
+		math.max(
+			int(math.abs(m_pos.x - last_m_pos.x) / CELL_SIZE),
+			int(math.abs(m_pos.y - last_m_pos.y) / CELL_SIZE),
+		),
+		1,
+	)
+
+	for step in 0 ..< steps {
+		interp_pos := last_m_pos + (m_pos - last_m_pos) * (f32(step) / f32(steps))
+		interp_row := int(interp_pos.y / CELL_SIZE)
+		interp_col := int(interp_pos.x / CELL_SIZE)
+
+		if inBounds(interp_row, interp_col) {
+			if rl.IsMouseButtonDown(.LEFT) {
+				applyBrush(interp_row, interp_col, 'a', p_type[p_num])
+			}
+			if rl.IsMouseButtonPressed(.RIGHT) {
+				applyBrush(interp_row, interp_col, 'e')
+			}
 		}
 	}
 
@@ -114,14 +133,15 @@ controls :: proc() {
 			brush_size /= 2
 		}
 	}
+	last_m_pos = m_pos
 }
 
 // Update game
 updateGame :: proc() {
 	controls()
-	if !paused {
-		particleSimulation()
-	}
+
+	if !paused do particleSimulation()
+
 	drawGame()
 }
 
@@ -523,9 +543,9 @@ fireInteractions :: proc(row, col: int) {
 
 	// Steam
 	changeParticle(row, col, -1, 0, 0, .Steam, .None, false) // Above
-	changeParticle(row, col, 1, 0, 0, .Steam, .None, false) // Below
-	changeParticle(row, col, 0, side, 0, .Steam, .None, false) // Side
-	changeParticle(row, col, 0, -side, 0, .Steam, .None, false) // Side
+	// changeParticle(row, col, 1, 0, 0, .Steam, .None, false) // Below
+	// changeParticle(row, col, 0, side, 0, .Steam, .None, false) // Side
+	// changeParticle(row, col, 0, -side, 0, .Steam, .None, false) // Side
 
 	// Water
 	changeParticle(row, col, -1, 0, 0, .Water, .Steam) // Above
@@ -573,7 +593,6 @@ updateFire :: proc(row, col: int) {
 	// on health 0
 	if cells[row][col].health <= 0 {
 		removeParticle(row, col)
-
 	}
 
 	fireMovement(row, col)
@@ -643,3 +662,4 @@ particleSimulation :: proc() {
 	// **Third Pass: Update Fire Particles**
 	simulationPasses(.Fire)
 }
+
