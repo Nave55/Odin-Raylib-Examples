@@ -228,6 +228,8 @@ setParticleColor :: proc(particle: Particles) -> rl.Color {
 }
 
 // Utility functions
+
+// checks if particle is in bounds
 inBounds :: proc(row, col: int) -> bool {
 	return (row >= 0 && row < ROWS) && (col >= 0 && col < COLS)
 }
@@ -326,7 +328,7 @@ swapParticles :: proc(row1, col1, row2, col2: int) {
 		cells[row1][col1] = cells[row2][col2]
 		cells[row2][col2] = temp
 
-
+		// Updates Particles 
 		cells[row1][col1].updated = true
 		cells[row2][col2].updated = true
 
@@ -341,14 +343,17 @@ moveParticle :: proc(row, col: int, type: rune, dirs: []int = {}, update := true
 
 	switch type {
 	case 'b':
+		// Below
 		if isEmptyCell(row + 1, col) {
 			swapParticles(row, col, row + 1, col)
 		}
 	case 'a':
+		// Above
 		if isEmptyCell(row - 1, col) {
 			swapParticles(row, col, row - 1, col)
 		}
 	case 'd':
+		// Diagonal Down
 		for dir in dirs {
 			new_col := col + dir
 
@@ -360,6 +365,7 @@ moveParticle :: proc(row, col: int, type: rune, dirs: []int = {}, update := true
 			}
 		}
 	case 'r':
+		// Diagonal Up
 		for dir in dirs {
 			new_col := col + dir
 
@@ -371,10 +377,34 @@ moveParticle :: proc(row, col: int, type: rune, dirs: []int = {}, update := true
 			}
 		}
 	case 'h':
+		// Horizontal
 		for dir in dirs {
 			dispMovement(row, col, dir, 0)
 		}
 	}
+}
+
+sandInteractions :: proc(row, col: int) {
+	// **Swap with Water and Steam Directly Below**
+	if inBounds(row + 1, col) {
+		s_part := cells[row + 1][col]
+
+		if (s_part.type == .Water || s_part.type == .Steam) && !s_part.updated {
+			swapParticles(row, col, row + 1, col)
+		}
+	}
+}
+
+sandMovement :: proc(row, col: int) {
+
+	directions: []int = {-1, 1}
+	rand.shuffle(directions)
+
+	// **Attempt to Move Down**
+	moveParticle(row, col, 'b')
+
+	// **Attempt Diagonal Movement into Empty Spaces Only**
+	moveParticle(row, col, 'd', directions)
 }
 
 // Update sand particle with desired logic
@@ -384,29 +414,14 @@ updateSand :: proc(row, col: int) {
 	} else {
 		cells[row][col].disp_rate = setDispRate(cells[row][col])
 
-		// **Swap with Water and Steam Directly Below**
-		if inBounds(row + 1, col) {
-			s_part := cells[row + 1][col]
-
-			if (s_part.type == .Water || s_part.type == .Steam) && !s_part.updated {
-				swapParticles(row, col, row + 1, col)
-			}
-		}
+		sandInteractions(row, col)
 	}
 
 	if cells[row][col].updated {
 		return // Skip if already updated
 	}
 
-	// **Attempt to Move Down**
-	moveParticle(row, col, 'b')
-
-	// **Attempt Diagonal Movement into Empty Spaces Only**
-	directions: []int = {-1, 1}
-	rand.shuffle(directions)
-
-	moveParticle(row, col, 'd', directions)
-
+	sandMovement(row, col)
 
 	// **No Movement Possible**
 	cells[row][col].updated = true
