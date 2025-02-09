@@ -301,13 +301,18 @@ dispMovement :: proc(row, col, x, y: int) {
 }
 
 // change particle
-changeParticle :: proc(row, col, r, c, chance: int, typeof, typeto: Particles, both := false) {
+changeParticle :: proc(
+	row, col, r, c, chance: int,
+	typeof, typeto: Particles,
+	primary := true,
+	secondary := true,
+) {
 	if inBounds(row + r, col + c) {
 		s_part := cells[row + r][col + c]
 
 		if s_part.type == typeof {
-			removeParticle(row, col)
-			if both do removeParticle(row + r, col + c)
+			if primary do removeParticle(row, col)
+			if secondary do removeParticle(row + r, col + c)
 			if chance == 0 do addParticle(row, col, typeto)
 		}
 	}
@@ -446,11 +451,11 @@ steamInteractions :: proc(row, col: int) {
 	chance := rand.int_max(5)
 
 	// **Condense with Water Above**
-	changeParticle(row, col, -1, 0, chance, .Water, .Water)
+	changeParticle(row, col, -1, 0, chance, .Water, .Water, true, false)
 	// **Condense with Water Side**
-	changeParticle(row, col, 0, side, chance, .Water, .Water)
+	changeParticle(row, col, 0, side, chance, .Water, .Water, true, false)
 	// **Condense with Water Side**
-	changeParticle(row, col, 0, -side, chance, .Water, .Water)
+	changeParticle(row, col, 0, -side, chance, .Water, .Water, true, false)
 }
 
 steamMovement :: proc(row, col: int) {
@@ -501,10 +506,16 @@ fireInteractions :: proc(row, col: int) {
 	side := rand.choice(([]int){-1, 1})
 
 	// Water
-	changeParticle(row, col, -1, 0, 0, .Water, .Steam, true) // Above
-	changeParticle(row, col, 1, 0, 0, .Water, .Steam, true) // Below
-	changeParticle(row, col, 0, side, 0, .Water, .Steam, true) // Side
-	changeParticle(row, col, 0, -side, 0, .Water, .Steam, true) // Side
+	changeParticle(row, col, -1, 0, 0, .Water, .Steam) // Above
+	changeParticle(row, col, 1, 0, 0, .Water, .Steam) // Below
+	changeParticle(row, col, 0, side, 0, .Water, .Steam) // Side
+	changeParticle(row, col, 0, -side, 0, .Water, .Steam) // Side
+
+	// Steam
+	changeParticle(row, col, -1, 0, 0, .Steam, .None, false) // Above
+	changeParticle(row, col, 1, 0, 0, .Steam, .None, false) // Below
+	changeParticle(row, col, 0, side, 0, .Steam, .None, false) // Side
+	changeParticle(row, col, 0, -side, 0, .Steam, .None, false) // Side
 }
 
 fireMovement :: proc(row, col: int) {
@@ -613,3 +624,4 @@ particleSimulation :: proc() {
 	// **Third Pass: Update Fire Particles**
 	simulationPasses(.Fire)
 }
+
