@@ -221,7 +221,7 @@ setParticleColor :: proc(particle: Particles) -> rl.Color {
 	case .Steam:
 		return randColor(10, 18, .05, .15, .60, .64)
 	case .Fire:
-		return randColor(30, 42, .80, .95, .80, .90)
+		return randColor(25, 40, .80, .95, .70, .90)
 	}
 	return LIGHT_GREY
 }
@@ -271,7 +271,7 @@ setDispRate :: proc(particle: Particle) -> int {
 	case .Steam:
 		return 7
 	case .Fire:
-		return 5
+		return 12
 	case:
 		return 0
 	}
@@ -279,17 +279,20 @@ setDispRate :: proc(particle: Particle) -> int {
 }
 
 // controls movement horizontally based on the disp_rate
-dispMovement :: proc(row, col, mod: int) {
+dispMovement :: proc(row, col, x, y: int) {
 	col := col
+	row := row
 	moves := 0
 	max_moves := cells[row][col].disp_rate
 
 	for moves < max_moves {
 		cell := cells[row][col]
-		new_col := col + mod
-		if isEmptyCell(row, new_col) {
-			swapParticles(row, col, row, new_col)
+		new_col := col + x
+		new_row := row + y
+		if isEmptyCell(new_row, new_col) {
+			swapParticles(row, col, new_row, new_col)
 			col = new_col
+			row = new_row
 			moves += 1
 		} else {
 			return
@@ -298,13 +301,13 @@ dispMovement :: proc(row, col, mod: int) {
 }
 
 // change particle
-changeParticle :: proc(row, col, r, c, chance: int, typeof, typeto: Particles) {
+changeParticle :: proc(row, col, r, c, chance: int, typeof, typeto: Particles, both := false) {
 	if inBounds(row + r, col + c) {
 		s_part := cells[row + r][col + c]
 
 		if s_part.type == typeof {
 			removeParticle(row, col)
-			removeParticle(row + r, col + c)
+			if both do removeParticle(row + r, col + c)
 			if chance == 0 do addParticle(row, col, typeto)
 		}
 	}
@@ -317,14 +320,16 @@ swapParticles :: proc(row1, col1, row2, col2: int) {
 		cells[row1][col1] = cells[row2][col2]
 		cells[row2][col2] = temp
 
+
 		cells[row1][col1].updated = true
 		cells[row2][col2].updated = true
+
 	}
 }
 
 // Moves particles. If 'b' move down, if 'd' move diagonally, if 'h' move horizontally 
-moveParticle :: proc(row, col: int, type: rune, dirs: []int = {}) {
-	if isEmptyCell(row, col) {
+moveParticle :: proc(row, col: int, type: rune, dirs: []int = {}, update := true) {
+	if update && isEmptyCell(row, col) {
 		if cells[row][col].updated do return
 	}
 
@@ -361,7 +366,7 @@ moveParticle :: proc(row, col: int, type: rune, dirs: []int = {}) {
 		}
 	case 'h':
 		for dir in dirs {
-			dispMovement(row, col, dir)
+			dispMovement(row, col, dir, 0)
 		}
 	}
 }
@@ -401,6 +406,21 @@ updateSand :: proc(row, col: int) {
 	cells[row][col].updated = true
 }
 
+waterMovement :: proc(row, col: int) {
+	directions := []int{-1, 1}
+	rand.shuffle(directions)
+
+	// **Attempt to Move Down**
+	moveParticle(row, col, 'b')
+
+	// **Attempt Diagonal Down Movement**
+	moveParticle(row, col, 'd', directions)
+
+	// **Move Horizontally if Possible**
+	moveParticle(row, col, 'h', directions)
+
+}
+
 // Update water particle
 updateWater :: proc(row, col: int) {
 	if !inBounds(row, col) || cells[row][col].type != .Water {
@@ -413,20 +433,41 @@ updateWater :: proc(row, col: int) {
 		return // Skip if already updated
 	}
 
-	// **Attempt to Move Down**
-	moveParticle(row, col, 'b')
-
-	directions := []int{-1, 1}
-	rand.shuffle(directions)
-
-	// **Attempt Diagonal Movement**
-	moveParticle(row, col, 'd', directions)
-
-	// **Move Horizontally if Possible**
-	moveParticle(row, col, 'h', directions)
+	waterMovement(row, col)
 
 	// **No Movement Possible**
 	cells[row][col].updated = true
+}
+
+steamInteractions :: proc(row, col: int) {
+
+	// Water
+	side := rand.choice(([]int){-1, 1})
+	chance := rand.int_max(5)
+
+	// **Condense with Water Above**
+	changeParticle(row, col, -1, 0, chance, .Water, .Water)
+	// **Condense with Water Side**
+	changeParticle(row, col, 0, side, chance, .Water, .Water)
+	// **Condense with Water Side**
+	changeParticle(row, col, 0, -side, chance, .Water, .Water)
+}
+
+steamMovement :: proc(row, col: int) {
+	directions := []int{-1, 1}
+	rand.shuffle(directions)
+
+	// **Attempt to Move Up**
+	moveParticle(row, col, 'a')
+
+	// **Attempt Diagonal Down Movement**
+	moveParticle(row, col, 'd', directions)
+
+	// **Attempt Diagonal Up Movement**
+	moveParticle(row, col, 'r', directions)
+
+	// **Move Horizontally if Possible**
+	moveParticle(row, col, 'h', directions, false)
 }
 
 // Update steam particle
@@ -434,19 +475,10 @@ updateSteam :: proc(row, col: int) {
 	if !inBounds(row, col) || cells[row][col].type != .Steam {
 		return
 	} else {
-		// fmt.println(cells[row][col].disp_rate)
 		cells[row][col].disp_rate = setDispRate(cells[row][col])
 		cells[row][col].health -= rand.float32_uniform(.00001, .001)
 
-		// Condense to water 
-		side := rand.choice(([]int){-1, 1})
-		chance := rand.int_max(20)
-		// **Condense with Water Above**
-		changeParticle(row, col, -1, 0, chance, .Water, .Water)
-		// **Condense with Water Side**
-		changeParticle(row, col, 0, side, chance, .Water, .Water)
-		// **Condense with Water Side**
-		changeParticle(row, col, 0, -side, chance, .Water, .Water)
+		steamInteractions(row, col)
 	}
 
 	if cells[row][col].updated {
@@ -459,24 +491,41 @@ updateSteam :: proc(row, col: int) {
 		if rand.int_max(20) == 0 do addParticle(row, col, .Water)
 	}
 
-	// **Attempt to Move Up**
-	moveParticle(row, col, 'a')
-
-	// **Attempt Diagonal Movement**
-	directions := []int{-1, 1}
-	rand.shuffle(directions)
-
-	moveParticle(row, col, 'd', directions)
-	moveParticle(row, col, 'r', directions)
-
-	// **Move Horizontally if Possible**
-	moveParticle(row, col, 'h', directions)
+	steamMovement(row, col)
 
 	// **No Movement Possible**
 	cells[row][col].updated = true
 }
 
-// Update fire particle
+fireInteractions :: proc(row, col: int) {
+	side := rand.choice(([]int){-1, 1})
+
+	// Water
+	changeParticle(row, col, -1, 0, 0, .Water, .Steam, true) // Above
+	changeParticle(row, col, 1, 0, 0, .Water, .Steam, true) // Below
+	changeParticle(row, col, 0, side, 0, .Water, .Steam, true) // Side
+	changeParticle(row, col, 0, -side, 0, .Water, .Steam, true) // Side
+}
+
+fireMovement :: proc(row, col: int) {
+
+	directions := []int{-1, 1}
+	rand.shuffle(directions)
+
+	// **Move Down if Possible**
+	moveParticle(row, col, 'b')
+
+	// **Move Diagonally Up if Possible**
+	moveParticle(row, col, 'r', directions)
+
+	// **Move Horizontally if Possible**
+	moveParticle(row, col, 'h', directions, false)
+
+	// **Move Up if Possible**
+	dispMovement(row, col, 0, -1)
+}
+
+// // Update fire particle
 updateFire :: proc(row, col: int) {
 	if !inBounds(row, col) || cells[row][col].type != .Fire {
 		return
@@ -484,18 +533,7 @@ updateFire :: proc(row, col: int) {
 		cells[row][col].disp_rate = setDispRate(cells[row][col])
 		cells[row][col].health -= rand.float32_uniform(.0001, .002)
 
-		// Transform to steam
-		side := rand.choice(([]int){-1, 1})
-		// chance := rand.int_max(20)
-
-		// **Water Above**
-		changeParticle(row, col, -1, 0, 0, .Water, .Steam)
-		// **Water Below**
-		changeParticle(row, col, 1, 0, 0, .Water, .Steam)
-		// **Water Side**
-		changeParticle(row, col, 0, side, 0, .Water, .Steam)
-		// **Water Side**
-		changeParticle(row, col, 0, -side, 0, .Water, .Steam)
+		fireInteractions(row, col)
 	}
 
 	if cells[row][col].updated {
@@ -505,14 +543,10 @@ updateFire :: proc(row, col: int) {
 	// on health 0
 	if cells[row][col].health <= 0 {
 		removeParticle(row, col)
+
 	}
 
-	// // **Attempt Diagonal Movement**
-	directions := []int{-1, 1}
-	rand.shuffle(directions)
-
-	moveParticle(row, col, 'd', directions)
-	moveParticle(row, col, 'r', directions)
+	fireMovement(row, col)
 
 	// **No Movement Possible**
 	cells[row][col].updated = true
