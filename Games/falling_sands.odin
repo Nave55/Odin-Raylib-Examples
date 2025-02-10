@@ -102,11 +102,13 @@ controls :: proc() {
 			if rl.IsMouseButtonDown(.LEFT) {
 				applyBrush(interp_row, interp_col, 'a', p_type[p_num])
 			}
-			if rl.IsMouseButtonPressed(.RIGHT) {
+			if rl.IsMouseButtonDown(.RIGHT) {
 				applyBrush(interp_row, interp_col, 'e')
 			}
 		}
 	}
+
+	last_m_pos = m_pos
 
 	if rl.IsKeyPressed(.R) {
 		initGame()
@@ -133,7 +135,6 @@ controls :: proc() {
 			brush_size /= 2
 		}
 	}
-	last_m_pos = m_pos
 }
 
 // Update game
