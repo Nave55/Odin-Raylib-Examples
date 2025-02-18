@@ -13,14 +13,16 @@ Particles :: enum {
 	Water,
 	Steam,
 	Fire,
+	Wood,
 }
 
 Particle :: struct {
 	color:     rl.Color, // color of the particle
 	type:      Particles, // type of the particle
-	updated:   bool, // Flag to prevent multiple updates per frame
+	updated:   bool, // flag to prevent multiple updates per frame
 	disp_rate: int, // how quickly the particle moves horizontally
-	health:    f32, // Health of the particle
+	health:    f32, // health of the particle
+	moveable:  bool,
 }
 
 // Constants
@@ -39,10 +41,11 @@ ROCK_COLOR :: rl.Color{115, 104, 101, 255}
 WATER_COLOR :: rl.Color{43, 103, 179, 255}
 STEAM_COLOR :: rl.Color{180, 156, 151, 255}
 FIRE_COLOR :: rl.Color{197, 100, 12, 255}
+WOOD_COLOR :: rl.Color{52, 31, 26, 255}
 
 // Variables
 cells: [ROWS][COLS]Particle // array for all the particles on screen
-p_type: [5]Particles // array containing all the particle enum types
+p_type: [6]Particles // array containing all the particle enum types
 p_num: u8 // index for the p_type array 
 m_pos: rl.Vector2 // mouse position
 last_m_pos: rl.Vector2 // mouse position
@@ -65,12 +68,11 @@ main :: proc() {
 initGame :: proc() {
 	for &row in cells {
 		for &cell in row {
-			cell = Particle{LIGHT_GREY, .None, false, 0, 1}
+			cell = Particle{LIGHT_GREY, .None, false, 0, 1, true}
 		}
 	}
-
 	p_num = 0
-	p_type = {.Sand, .Rock, .Water, .Steam, .Fire}
+	p_type = {.Sand, .Rock, .Water, .Steam, .Fire, .Wood}
 	paused = false
 	showFPS = false
 	brush_size = 3
@@ -114,8 +116,13 @@ controls :: proc() {
 		initGame()
 	}
 
-	if rl.IsKeyPressed(.T) {
+	if rl.IsKeyPressed(.RIGHT) {
 		p_num = (p_num + 1) %% len(p_type)
+	}
+
+	if rl.IsKeyPressed(.LEFT) {
+		if p_num > 0 do p_num -= 1
+		else do p_num = len(p_type) - 1
 	}
 
 	if rl.IsKeyPressed(.SPACE) {
@@ -126,11 +133,11 @@ controls :: proc() {
 		showFPS = !showFPS
 	}
 
-	if rl.IsKeyPressed(.A) {
+	if rl.IsKeyPressed(.UP) {
 		brush_size *= 2
 	}
 
-	if rl.IsKeyPressed(.D) {
+	if rl.IsKeyPressed(.DOWN) {
 		if brush_size > 1 {
 			brush_size /= 2
 		}
@@ -198,6 +205,8 @@ drawBrush :: proc() {
 		color = STEAM_COLOR
 	case .Fire:
 		color = FIRE_COLOR
+	case .Wood:
+		color = WOOD_COLOR
 	}
 
 	rl.DrawRectangle(i32(col * CELL_SIZE), i32(row * CELL_SIZE), brush_size, brush_size, color)
@@ -244,6 +253,8 @@ setParticleColor :: proc(particle: Particles) -> rl.Color {
 		return randColor(10, 18, .05, .15, .60, .64)
 	case .Fire:
 		return randColor(25, 40, .80, .95, .70, .90)
+	case .Wood:
+		return randColor(10, 12, .5, .52, .19, .25)
 	}
 	return LIGHT_GREY
 }
@@ -264,12 +275,12 @@ isEmptyCell :: proc(row, col: int) -> bool {
 addParticle :: proc(row, col: int, type: Particles) {
 	if isEmptyCell(row, col) {
 		rate := setDispRate(cells[row][col])
-		if type != .Rock {
+		if type != .Rock && type != .Wood {
 			if rand.float32() < 0.15 {
-				cells[row][col] = Particle{setParticleColor(type), type, false, rate, 1}
+				cells[row][col] = Particle{setParticleColor(type), type, false, rate, 1, true}
 			}
 		} else {
-			cells[row][col] = Particle{setParticleColor(type), type, false, rate, 1}
+			cells[row][col] = Particle{setParticleColor(type), type, false, rate, 1, false}
 		}
 	}
 }
@@ -277,7 +288,7 @@ addParticle :: proc(row, col: int, type: Particles) {
 // removes particles
 removeParticle :: proc(row, col: int) {
 	if !isEmptyCell(row, col) {
-		cells[row][col] = Particle{LIGHT_GREY, .None, false, 0, 0}
+		cells[row][col] = Particle{LIGHT_GREY, .None, false, 0, 0, true}
 	}
 }
 
@@ -320,6 +331,33 @@ dispMovement :: proc(row, col, x, y: int) {
 			moves += 1
 		} else {
 			return
+		}
+	}
+}
+
+//check particle
+checkParticle :: proc(row, col, r, c: int, type: Particles) -> bool {
+	if inBounds(row + r, col + c) {
+		return cells[row + r][col + c].type == type ? true : false
+	}
+	return false
+}
+
+particleHealthZero :: proc(
+	row, col, r, c: int,
+	type, typeto: Particles,
+	h_add_s: f32,
+	h_add_p: f32,
+	primary, secondary: bool,
+) {
+	if checkParticle(row, col, r, c, type) {
+
+		cells[row + r][col + c].health += h_add_s
+
+		if cells[row][col].health < 1 do cells[row][col].health += h_add_p
+
+		if cells[row + r][col + c].health <= 0 {
+			changeParticle(row, col, r, c, 0, type, typeto, primary, secondary)
 		}
 	}
 }
@@ -378,7 +416,7 @@ moveParticle :: proc(row, col: int, type: rune, dirs: []int = {}, update := true
 		for dir in dirs {
 			new_col := col + dir
 
-			if !inBounds(row, new_col) || cells[row][new_col].type == .Rock do continue
+			if !inBounds(row, new_col) || cells[row][new_col].moveable == false do continue
 
 			// **Move Diagonally if the space is empty**
 			if isEmptyCell(row + 1, new_col) {
@@ -390,7 +428,7 @@ moveParticle :: proc(row, col: int, type: rune, dirs: []int = {}, update := true
 		for dir in dirs {
 			new_col := col + dir
 
-			if !inBounds(row, new_col) || cells[row][new_col].type == .Rock do continue
+			if !inBounds(row, new_col) || cells[row][new_col].moveable == false do continue
 
 			// **Move Diagonally if the space is empty**
 			if isEmptyCell(row - 1, new_col) {
@@ -556,6 +594,13 @@ fireInteractions :: proc(row, col: int) {
 
 	// Sand
 	changeParticle(row, col, -1, 0, 0, .Sand, .None, true, false) // Above
+
+	// Wood
+	particleHealthZero(row, col, -1, 0, .Wood, .Fire, -.01, .01, false, true) // Above
+	particleHealthZero(row, col, 1, 0, .Wood, .Fire, -.01, .01, false, true) // Below
+	particleHealthZero(row, col, 0, -1, .Wood, .Fire, -.01, .01, false, true) // Side
+	particleHealthZero(row, col, 0, 1, .Wood, .Fire, -.01, .01, false, true) // Side
+
 }
 
 fireMovement :: proc(row, col: int) {
@@ -583,7 +628,6 @@ updateFire :: proc(row, col: int) {
 	} else {
 		cells[row][col].disp_rate = setDispRate(cells[row][col])
 		cells[row][col].health -= rand.float32_uniform(.0001, .002)
-
 		fireInteractions(row, col)
 	}
 
