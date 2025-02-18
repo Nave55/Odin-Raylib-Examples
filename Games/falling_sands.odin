@@ -14,6 +14,7 @@ Particles :: enum {
 	Steam,
 	Fire,
 	Wood,
+	Smoke,
 }
 
 Particle :: struct {
@@ -42,10 +43,11 @@ WATER_COLOR :: rl.Color{43, 103, 179, 255}
 STEAM_COLOR :: rl.Color{180, 156, 151, 255}
 FIRE_COLOR :: rl.Color{197, 100, 12, 255}
 WOOD_COLOR :: rl.Color{52, 31, 26, 255}
+SMOKE_COLOR :: rl.Color{57, 53, 52, 255}
 
 // Variables
 cells: [ROWS][COLS]Particle // array for all the particles on screen
-p_type: [6]Particles // array containing all the particle enum types
+p_type: [7]Particles // array containing all the particle enum types
 p_num: u8 // index for the p_type array 
 m_pos: rl.Vector2 // mouse position
 last_m_pos: rl.Vector2 // mouse position
@@ -71,8 +73,9 @@ initGame :: proc() {
 			cell = Particle{LIGHT_GREY, .None, false, 0, 1, true}
 		}
 	}
+
 	p_num = 0
-	p_type = {.Sand, .Rock, .Water, .Steam, .Fire, .Wood}
+	p_type = {.Sand, .Rock, .Water, .Steam, .Fire, .Wood, .Smoke}
 	paused = false
 	showFPS = false
 	brush_size = 3
@@ -157,14 +160,12 @@ updateGame :: proc() {
 drawGame :: proc() {
 	rl.BeginDrawing()
 	defer rl.EndDrawing()
-	rl.ClearBackground(GREY)
+	rl.ClearBackground(rl.BLACK)
 
 	drawGrid()
 	drawBrush()
 
-	if showFPS {
-		rl.DrawFPS(10, 10)
-	}
+	if showFPS do rl.DrawFPS(10, 10)
 }
 
 // Draw particles
@@ -207,6 +208,8 @@ drawBrush :: proc() {
 		color = FIRE_COLOR
 	case .Wood:
 		color = WOOD_COLOR
+	case .Smoke:
+		color = SMOKE_COLOR
 	}
 
 	rl.DrawRectangle(i32(col * CELL_SIZE), i32(row * CELL_SIZE), brush_size, brush_size, color)
@@ -255,7 +258,10 @@ setParticleColor :: proc(particle: Particles) -> rl.Color {
 		return randColor(25, 40, .80, .95, .70, .90)
 	case .Wood:
 		return randColor(10, 12, .5, .52, .19, .25)
+	case .Smoke:
+		return randColor(8, 12, .05, .10, .20, .25)
 	}
+
 	return LIGHT_GREY
 }
 
@@ -304,9 +310,11 @@ setDispRate :: proc(particle: Particle) -> int {
 	case .Rock:
 		return 0
 	case .Steam:
-		return 7
+		return 5
 	case .Fire:
 		return 12
+	case .Smoke:
+		return 7
 	case:
 		return 0
 	}
@@ -348,6 +356,7 @@ particleHealthZero :: proc(
 	type, typeto: Particles,
 	h_add_s: f32,
 	h_add_p: f32,
+	extra: rune,
 	primary, secondary: bool,
 ) {
 	if checkParticle(row, col, r, c, type) {
@@ -357,6 +366,7 @@ particleHealthZero :: proc(
 		if cells[row][col].health < 1 do cells[row][col].health += h_add_p
 
 		if cells[row + r][col + c].health <= 0 {
+			if extra == 's' do addSmoke(row + r, col + c)
 			changeParticle(row, col, r, c, 0, type, typeto, primary, secondary)
 		}
 	}
@@ -451,7 +461,8 @@ sandInteractions :: proc(row, col: int) {
 	if inBounds(row + 1, col) {
 		s_part := cells[row + 1][col]
 
-		if (s_part.type == .Water || s_part.type == .Steam) && !s_part.updated {
+		if (s_part.type == .Water || s_part.type == .Steam || s_part.type == .Smoke) &&
+		   !s_part.updated {
 			swapParticles(row, col, row + 1, col)
 		}
 	}
@@ -584,10 +595,7 @@ fireInteractions :: proc(row, col: int) {
 	side := rand.choice(([]int){-1, 1})
 
 	// Steam
-	// changeParticle(row, col, -1, 0, 0, .Steam, .None, false) // Above
 	changeParticle(row, col, 1, 0, 0, .Steam, .None, false) // Below
-	// changeParticle(row, col, 0, side, 0, .Steam, .None, false) // Side
-	// changeParticle(row, col, 0, -side, 0, .Steam, .None, false) // Side
 
 	// Water
 	changeParticle(row, col, -1, 0, 0, .Water, .Steam) // Above
@@ -599,11 +607,10 @@ fireInteractions :: proc(row, col: int) {
 	changeParticle(row, col, -1, 0, 0, .Sand, .None, true, false) // Above
 
 	// Wood
-	particleHealthZero(row, col, -1, 0, .Wood, .Fire, -.01, .01, false, true) // Above
-	particleHealthZero(row, col, 1, 0, .Wood, .Fire, -.01, .01, false, true) // Below
-	particleHealthZero(row, col, 0, -1, .Wood, .Fire, -.01, .01, false, true) // Side
-	particleHealthZero(row, col, 0, 1, .Wood, .Fire, -.01, .01, false, true) // Side
-
+	particleHealthZero(row, col, -1, 0, .Wood, .Fire, -.01, .01, 's', false, true) // Above
+	particleHealthZero(row, col, 1, 0, .Wood, .Fire, -.01, .01, 's', false, true) // Below
+	particleHealthZero(row, col, 0, -1, .Wood, .Fire, -.01, .01, 's', false, true) // Side
+	particleHealthZero(row, col, 0, 1, .Wood, .Fire, -.01, .01, 's', false, true) // Side
 }
 
 fireMovement :: proc(row, col: int) {
@@ -649,6 +656,70 @@ updateFire :: proc(row, col: int) {
 	cells[row][col].updated = true
 }
 
+addSmoke :: proc(row, col: int) {
+	up := -1
+	for row + up > 0 {
+		if checkParticle(row, col, up, 0, .None) {
+			addParticle(row + up, col, .Smoke)
+			break
+		}
+		if cells[row + up][col].type != .Fire {
+			break
+		}
+		up -= 1
+	}
+}
+
+smokeInteractions :: proc(row, col: int) {
+	// water
+	if checkParticle(row, col, -1, 0, .Water) {
+		swapParticles(row, col, row - 1, col)
+	}
+
+	// fire
+	if checkParticle(row, col, -1, 0, .Fire) {
+		swapParticles(row, col, row - 1, col)
+	}
+}
+
+smokeMovement :: proc(row, col: int) {
+	directions := []int{-1, 1}
+	rand.shuffle(directions)
+
+	// **Attempt to Move Up**
+	moveParticle(row, col, 'a')
+
+	// **Attempt Diagonal Down Movement**
+	moveParticle(row, col, 'd', directions)
+
+	// **Attempt Diagonal Up Movement**
+	moveParticle(row, col, 'r', directions)
+
+	// **Move Horizontally if Possible**
+	moveParticle(row, col, 'h', directions, false)
+}
+
+// Update steam particle
+updateSmoke :: proc(row, col: int) {
+	if !inBounds(row, col) || cells[row][col].type != .Smoke {
+		return
+	} else {
+		cells[row][col].disp_rate = setDispRate(cells[row][col])
+		cells[row][col].health -= rand.float32_uniform(.00001, .001)
+
+		smokeInteractions(row, col)
+	}
+
+	if cells[row][col].updated {
+		return // Skip if already updated
+	}
+
+	steamMovement(row, col)
+
+	// **No Movement Possible**
+	cells[row][col].updated = true
+}
+
 // Update particle positions
 updateParticle :: proc(row, col: int) {
 	particle := &cells[row][col]
@@ -665,6 +736,8 @@ updateParticle :: proc(row, col: int) {
 		updateSteam(row, col)
 	case .Fire:
 		updateFire(row, col)
+	case .Smoke:
+		updateSmoke(row, col)
 	case:
 		particle.updated = true
 	}
@@ -709,5 +782,7 @@ particleSimulation :: proc() {
 
 	// **Third Pass: Update Fire Particles**
 	simulationPasses(.Fire)
-}
 
+	// **Fourth Pass: Update Smoke Particles**
+	simulationPasses(.Smoke)
+}
