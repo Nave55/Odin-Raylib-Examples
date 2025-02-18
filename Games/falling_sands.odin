@@ -714,6 +714,10 @@ updateSmoke :: proc(row, col: int) {
 		return // Skip if already updated
 	}
 
+	if cells[row][col].health <= 0 {
+		removeParticle(row, col)
+	}
+
 	steamMovement(row, col)
 
 	// **No Movement Possible**
@@ -786,3 +790,4 @@ particleSimulation :: proc() {
 	// **Fourth Pass: Update Smoke Particles**
 	simulationPasses(.Smoke)
 }
+
