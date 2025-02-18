@@ -375,7 +375,10 @@ changeParticle :: proc(
 		if s_part.type == typeof {
 			if primary do removeParticle(row, col)
 			if secondary do removeParticle(row + r, col + c)
-			if chance == 0 do addParticle(row, col, typeto)
+			if chance == 0 {
+				if secondary do addParticle(row + r, col + c, typeto)
+				else do addParticle(row, col, typeto)
+			}
 		}
 	}
 }
@@ -581,8 +584,8 @@ fireInteractions :: proc(row, col: int) {
 	side := rand.choice(([]int){-1, 1})
 
 	// Steam
-	changeParticle(row, col, -1, 0, 0, .Steam, .None, false) // Above
-	// changeParticle(row, col, 1, 0, 0, .Steam, .None, false) // Below
+	// changeParticle(row, col, -1, 0, 0, .Steam, .None, false) // Above
+	changeParticle(row, col, 1, 0, 0, .Steam, .None, false) // Below
 	// changeParticle(row, col, 0, side, 0, .Steam, .None, false) // Side
 	// changeParticle(row, col, 0, -side, 0, .Steam, .None, false) // Side
 
