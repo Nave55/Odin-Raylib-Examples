@@ -37,11 +37,11 @@ GameData :: struct {
 	game_over: bool,
 	first_move: bool,
 	bombs_left: i32,
-	victory: bool,
-	stopwatch: time.Stopwatch,
-	visited: map[[2]int]struct{},
-	int_map: map[int]rl.Texture2D,
-	enum_map: map[Mark]rl.Texture2D,
+	victory:    bool,
+	stopwatch:  time.Stopwatch,
+	visited:    map[[2]int]struct{},
+	int_map:    map[int]rl.Texture2D,
+	enum_map:   map[Mark]rl.Texture2D,
 }
 
 // global constants
@@ -96,7 +96,6 @@ initGameData :: proc(arena: ^vm.Arena, arena_allocator: mem.Allocator) -> GameDa
 
 // initialize game on each start
 initGame :: proc(game_data: ^GameData) {
-	free_all(context.temp_allocator)
 	if len(game_data.visited) > 0 do clear(&game_data.visited)
 	game_data.first_move = true
 	game_data.game_over = false
@@ -151,18 +150,17 @@ initalizeGrid :: proc() {
 		}
 	}
 }
-
 // sets all tile values
 setGridVals :: proc(pos: [2]int) {
-	x := make(map[i32]bool)
-	defer delete(x)
+	x := make(map[i32]struct{}, context.temp_allocator)
+	defer free_all(context.temp_allocator)
 
 	num := i32(pos.x * 16 + pos.y)
 
 	for len(x) < BOMBS {
 		val := rl.GetRandomValue(0, 255)
 		for val == num do val = rl.GetRandomValue(0, 255)
-		x[val] = true
+		x[val] = {}
 	}
 
 	ttl: i32 = 0
