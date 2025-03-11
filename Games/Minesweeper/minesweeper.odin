@@ -58,10 +58,10 @@ grid: [16][16]TileInfo
 // main proc
 main :: proc() {
 	arena: vm.Arena
-    	err := vm.arena_init_static(&arena, 4 * mem.Kilobyte)
-    	assert(err == .None)
-    	arena_allocator := vm.arena_allocator(&arena)
-    	defer vm.arena_destroy(&arena)
+    err := vm.arena_init_static(&arena, 4 * mem.Kilobyte)
+    assert(err == .None)
+    arena_allocator := vm.arena_allocator(&arena)
+    defer vm.arena_destroy(&arena)
 
 	rl.SetTraceLogLevel(.NONE)
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Minesweeper")
@@ -69,7 +69,7 @@ main :: proc() {
 	rl.SetTargetFPS(30)
 
 	// unloadGame(&game_data)
-	game_data := initGameData(&arena, arena_allocator)
+	game_data := initGameData(arena_allocator)
 	loadTextures(&game_data)
 	initGame(&game_data)
 
@@ -79,7 +79,7 @@ main :: proc() {
 // Main Game Loop Functions
 
 @require_results
-initGameData :: proc(arena: ^vm.Arena, arena_allocator: mem.Allocator) -> GameData {
+initGameData :: proc(arena_allocator: mem.Allocator) -> GameData {
 	game_data := GameData {
 		false,
 		true,
@@ -125,7 +125,6 @@ drawGame :: proc(game_data: ^GameData) {
 	drawTextures(game_data)
 	drawBombTracker(game_data^)
 	drawTimer(game_data)
-	// debugGame(rl.GetMousePosition())
 }
 
 // update game loop
@@ -262,51 +261,29 @@ bombsAndVictory :: proc(game_data: ^GameData) {
 
 // Load all textures
 loadTextures :: proc(game_data: ^GameData) {
-	board := rl.LoadTexture("textures/board.png")
-	tile_img := rl.LoadTexture("textures/tile.png")
-	flag_img := rl.LoadTexture("textures/flag.png")
-	question_img := rl.LoadTexture("textures/question.png")
-	smile_img := rl.LoadTexture("textures/smile.png")
-	smile_clear_img := rl.LoadTexture("textures/smile_clear.png")
-	frown_img := rl.LoadTexture("textures/frown.png")
-	sunglasses_img := rl.LoadTexture("textures/sunglasses.png")
-	surprise_img := rl.LoadTexture("textures/surprise.png")
-	clear_img := rl.LoadTexture("textures/clear.png")
-	bomb_img := rl.LoadTexture("textures/bomb.png")
-	exploded_img := rl.LoadTexture("textures/exploded.png")
-	bad_marked_img := rl.LoadTexture("textures/bad_marked.png")
-	one_img := rl.LoadTexture("textures/one.png")
-	two_img := rl.LoadTexture("textures/two.png")
-	three_img := rl.LoadTexture("textures/three.png")
-	four_img := rl.LoadTexture("textures/four.png")
-	five_img := rl.LoadTexture("textures/five.png")
-	six_img := rl.LoadTexture("textures/six.png")
-	seven_img := rl.LoadTexture("textures/seven.png")
-	eight_img := rl.LoadTexture("textures/eight.png")
-
-	game_data.enum_map[.Clear] = tile_img
-	game_data.enum_map[.Flag] = flag_img
-	game_data.enum_map[.Question] = question_img
-	game_data.int_map[-4] = board
-	game_data.int_map[-3] = bad_marked_img
-	game_data.int_map[-2] = exploded_img
-	game_data.int_map[-1] = bomb_img
-	game_data.int_map[0] = clear_img
-	game_data.int_map[1] = one_img
-	game_data.int_map[2] = two_img
-	game_data.int_map[3] = three_img
-	game_data.int_map[4] = four_img
-	game_data.int_map[5] = five_img
-	game_data.int_map[6] = six_img
-	game_data.int_map[7] = seven_img
-	game_data.int_map[8] = eight_img
-	game_data.int_map[9] = smile_img
-	game_data.int_map[10] = frown_img
-	game_data.int_map[11] = surprise_img
-	game_data.int_map[12] = sunglasses_img
-	game_data.int_map[13] = smile_clear_img
+	game_data.enum_map[.Clear] = rl.LoadTexture("textures/tile.png")
+	game_data.enum_map[.Flag] = rl.LoadTexture("textures/flag.png")
+	game_data.enum_map[.Question] = rl.LoadTexture("textures/question.png")
+	game_data.int_map[-4] = rl.LoadTexture("textures/board.png")
+	game_data.int_map[-3] = rl.LoadTexture("textures/bad_marked.png")
+	game_data.int_map[-2] = rl.LoadTexture("textures/exploded.png")
+	game_data.int_map[-1] = rl.LoadTexture("textures/bomb.png")
+	game_data.int_map[0] = rl.LoadTexture("textures/clear.png")	
+	game_data.int_map[1] = rl.LoadTexture("textures/one.png")
+	game_data.int_map[2] = rl.LoadTexture("textures/two.png")
+	game_data.int_map[3] = rl.LoadTexture("textures/three.png")
+	game_data.int_map[4] = rl.LoadTexture("textures/four.png")
+	game_data.int_map[5] = rl.LoadTexture("textures/five.png")
+	game_data.int_map[6] = rl.LoadTexture("textures/six.png")
+	game_data.int_map[7] = rl.LoadTexture("textures/seven.png")
+	game_data.int_map[8] = rl.LoadTexture("textures/eight.png")
+	game_data.int_map[9] = rl.LoadTexture("textures/smile.png")
+	game_data.int_map[10] = rl.LoadTexture("textures/frown.png")
+	game_data.int_map[11] = rl.LoadTexture("textures/surprise.png")
+	game_data.int_map[12] = rl.LoadTexture("textures/sunglasses.png")
+	game_data.int_map[13] = rl.LoadTexture("textures/smile_clear.png")
 }
-
+	
 // Draw Textures
 drawTextures :: proc(game_data: ^GameData) {
 	for &i in grid {
