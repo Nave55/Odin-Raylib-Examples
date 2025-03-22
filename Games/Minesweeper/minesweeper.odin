@@ -58,10 +58,10 @@ grid: [16][16]TileInfo
 // main proc
 main :: proc() {
 	arena: vm.Arena
-    err := vm.arena_init_static(&arena, 4 * mem.Kilobyte)
-    assert(err == .None)
-    arena_allocator := vm.arena_allocator(&arena)
-    defer vm.arena_destroy(&arena)
+	err := vm.arena_init_static(&arena, 4 * mem.Kilobyte)
+    	assert(err == .None)
+    	arena_allocator := vm.arena_allocator(&arena)
+    	defer vm.arena_destroy(&arena)
 
 	rl.SetTraceLogLevel(.NONE)
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Minesweeper")
