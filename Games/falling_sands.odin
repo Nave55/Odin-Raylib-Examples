@@ -314,7 +314,7 @@ setDispRate :: proc(particle: Particle) -> int {
 	case .Fire:
 		return 12
 	case .Smoke:
-		return 7
+		return 5
 	case:
 		return 0
 	}
@@ -365,8 +365,12 @@ particleHealthZero :: proc(
 
 		if cells[row][col].health < 1 do cells[row][col].health += h_add_p
 
-		if cells[row + r][col + c].health <= 0 {
+		if cells[row + r][col + c].health <= .10 {
 			if extra == 's' do addSmoke(row + r, col + c)
+		}
+
+		if cells[row + r][col + c].health <= 0 {
+			// if extra == 's' do addSmoke(row + r, col + c)
 			changeParticle(row, col, r, c, 0, type, typeto, primary, secondary)
 		}
 	}
@@ -629,6 +633,10 @@ fireMovement :: proc(row, col: int) {
 
 	// **Move Up if Possible**
 	dispMovement(row, col, 0, -1)
+
+	if checkParticle(row, col, 1, 0, .Fire) {
+		moveParticle(row, col, 'a', {}, false)
+	}
 }
 
 // // Update fire particle
@@ -637,7 +645,9 @@ updateFire :: proc(row, col: int) {
 		return
 	} else {
 		cells[row][col].disp_rate = setDispRate(cells[row][col])
-		cells[row][col].health -= rand.float32_uniform(.0001, .002)
+		if !checkParticle(row, col, -1, 0, .Fire) {
+			cells[row][col].health -= rand.float32_uniform(.002, .0025)
+		}
 		fireInteractions(row, col)
 	}
 
