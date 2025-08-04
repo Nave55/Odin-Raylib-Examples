@@ -113,16 +113,16 @@ controls :: proc(game_data: ^GameData) {
 updatePlayer :: proc(game_data: ^GameData) {
 	using game_data
 
-	if rl.IsKeyDown(.LEFT) do game_data.player.position.x -= PLAYER_HOR_SPD * delta
-	if rl.IsKeyDown(.RIGHT) do game_data.player.position.x += PLAYER_HOR_SPD * delta
-	if rl.IsKeyDown(.SPACE) && game_data.player.canJump {
-		game_data.player.speed = -PLAYER_JUMP_SPD
-		game_data.player.canJump = false
+	if rl.IsKeyDown(.LEFT) do player.position.x -= PLAYER_HOR_SPD * delta
+	if rl.IsKeyDown(.RIGHT) do player.position.x += PLAYER_HOR_SPD * delta
+	if rl.IsKeyDown(.SPACE) && player.canJump {
+		player.speed = -PLAYER_JUMP_SPD
+		player.canJump = false
 	}
 
 	hit_obstacle := false
 
-	for &i in game_data.env_items {
+	for &i in env_items {
 		if i.blocking == 1 &&
 		   i.rect.x <= player.position.x &&
 		   i.rect.x + i.rect.width >= player.position.x &&
@@ -151,7 +151,7 @@ drawGame :: proc(game_data: GameData) {
 	{
 		rl.BeginMode2D(camera)
 		defer rl.EndMode2D()
-		for i in game_data.env_items do rl.DrawRectangleRec(i.rect, i.color)
+		for i in env_items do rl.DrawRectangleRec(i.rect, i.color)
 		rl.DrawRectangleRec({player.position.x - 20, player.position.y - 40, 40, 40}, rl.RED)
 	}
 
@@ -161,15 +161,12 @@ drawGame :: proc(game_data: GameData) {
 	rl.DrawText("- Mouse Wheel to Zoom in-out, R to reset zoom", 40, 80, 10, rl.DARKGRAY)
 	rl.DrawText("- C to change camera mode", 40, 100, 10, rl.DARKGRAY)
 	rl.DrawText("Current camera mode:", 20, 120, 10, rl.BLACK)
-	rl.DrawText(game_data.camera_descriptions[game_data.camera_option], 40, 140, 10, rl.DARKGRAY)
+	rl.DrawText(camera_descriptions[camera_option], 40, 140, 10, rl.DARKGRAY)
 }
 
 updateCameraCenter :: proc(game_data: ^GameData) {
-	camera := &game_data.camera
-	player := &game_data.player
-
-	camera.offset = {SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2}
-	camera.target = player.position
+	game_data.camera.offset = {SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2}
+	game_data.camera.target = game_data.player.position
 }
 
 updateCameraCenterClamp :: proc(game_data: ^GameData) {
@@ -179,7 +176,7 @@ updateCameraCenterClamp :: proc(game_data: ^GameData) {
 	camera.offset = {SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2}
 	min_x, min_y, max_x, max_y: f32 = 1000, 1000, -1000, -1000
 
-	for &i in game_data.env_items {
+	for &i in env_items {
 		min_x = min(i.rect.x, min_x)
 		max_x = max(i.rect.x + i.rect.width, max_x)
 		min_y = min(i.rect.y, min_y)
@@ -208,7 +205,7 @@ updateCameraSmooth :: proc(game_data: ^GameData) {
 
 	if length > min_effect_length {
 		speed := max(fraction_speed * length, min_speed)
-		camera.target = camera.target + (diff * (speed * game_data.delta / length))
+		camera.target = camera.target + (diff * (speed * delta / length))
 	}
 }
 
@@ -224,14 +221,14 @@ updateCameraHorizontalLand :: proc(game_data: ^GameData) {
 
 	if evening_out {
 		if even_out_target > camera.target.y {
-			camera.target.y += even_out_speed * game_data.delta
+			camera.target.y += even_out_speed * delta
 
 			if camera.target.y > even_out_target {
 				camera.target.y = even_out_target
 				evening_out = false
 			}
 		} else {
-			camera.target.y -= even_out_speed * game_data.delta
+			camera.target.y -= even_out_speed * delta
 
 			if camera.target.y < even_out_target {
 				camera.target.y = even_out_target
