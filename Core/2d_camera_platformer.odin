@@ -94,7 +94,7 @@ initGame :: proc() -> (game_data: GameData) {
 }
 
 controls :: proc(game_data: ^GameData) {
-    using game_data
+    	using game_data
 
 	delta = rl.GetFrameTime()
 	camera.zoom += rl.GetMouseWheelMove() * .05
