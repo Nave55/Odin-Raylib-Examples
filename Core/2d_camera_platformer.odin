@@ -93,9 +93,7 @@ initGame :: proc() -> (game_data: GameData) {
 	return game_data
 }
 
-controls :: proc(game_data: ^GameData) {
-    	using game_data
-
+controls :: proc(using game_data: ^GameData) {
 	delta = rl.GetFrameTime()
 	camera.zoom += rl.GetMouseWheelMove() * .05
 
@@ -110,9 +108,7 @@ controls :: proc(game_data: ^GameData) {
 	if rl.IsKeyPressed(.C) do camera_option = (camera_option + 1) % len(camera_descriptions)
 }
 
-updatePlayer :: proc(game_data: ^GameData) {
-	using game_data
-
+updatePlayer :: proc(using game_data: ^GameData) {
 	if rl.IsKeyDown(.LEFT) do player.position.x -= PLAYER_HOR_SPD * delta
 	if rl.IsKeyDown(.RIGHT) do player.position.x += PLAYER_HOR_SPD * delta
 	if rl.IsKeyDown(.SPACE) && player.canJump {
@@ -141,9 +137,7 @@ updatePlayer :: proc(game_data: ^GameData) {
 	} else do player.canJump = true
 }
 
-drawGame :: proc(game_data: GameData) {
-	using game_data
-
+drawGame :: proc(using game_data: GameData) {
 	rl.BeginDrawing()
 	defer rl.EndDrawing()
 	rl.ClearBackground(rl.LIGHTGRAY)
@@ -169,9 +163,7 @@ updateCameraCenter :: proc(game_data: ^GameData) {
 	game_data.camera.target = game_data.player.position
 }
 
-updateCameraCenterClamp :: proc(game_data: ^GameData) {
-	using game_data
-
+updateCameraCenterClamp :: proc(using game_data: ^GameData) {
 	camera.target = player.position
 	camera.offset = {SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2}
 	min_x, min_y, max_x, max_y: f32 = 1000, 1000, -1000, -1000
@@ -192,9 +184,7 @@ updateCameraCenterClamp :: proc(game_data: ^GameData) {
 	if min.y > 0 do camera.offset.y = SCREEN_HEIGHT / 2 - min.y
 }
 
-updateCameraSmooth :: proc(game_data: ^GameData) {
-	using game_data
-
+updateCameraSmooth :: proc(using game_data: ^GameData) {
 	min_speed: f32 = 30
 	min_effect_length: f32 = 10
 	fraction_speed: f32 = .8
@@ -209,9 +199,7 @@ updateCameraSmooth :: proc(game_data: ^GameData) {
 	}
 }
 
-updateCameraHorizontalLand :: proc(game_data: ^GameData) {
-	using game_data
-
+updateCameraHorizontalLand :: proc(using game_data: ^GameData) {
 	@(static) even_out_speed: f32 = 700
 	@(static) evening_out := false
 	@(static) even_out_target: f32
@@ -243,9 +231,7 @@ updateCameraHorizontalLand :: proc(game_data: ^GameData) {
 	}
 }
 
-updateCameraScreenEdge :: proc(game_data: ^GameData) {
-	using game_data
-
+updateCameraScreenEdge :: proc(using game_data: ^GameData) {
 	@(static) bbox: rl.Vector2 = {0.2, 0.2}
 
 	bbox_world_min: rl.Vector2 = rl.GetScreenToWorld2D(
