@@ -391,7 +391,7 @@ changeParticle :: proc(
 			if chance == 0 {
 				if secondary do addParticle(row + r, col + c, typeto)
 				else do addParticle(row, col, typeto)
-			}
+			} 
 		}
 	}
 }
@@ -542,7 +542,6 @@ updateWater :: proc(row, col: int) {
 }
 
 steamInteractions :: proc(row, col: int) {
-
 	// Water
 	side := rand.choice(([]int){-1, 1})
 	chance := rand.int_max(5)
@@ -802,4 +801,3 @@ particleSimulation :: proc() {
 	// **Fourth Pass: Update Smoke Particles**
 	simulationPasses(.Smoke)
 }
-
