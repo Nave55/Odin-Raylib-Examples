@@ -3,7 +3,6 @@ package falling_sands
 import "core:fmt"
 import "core:math"
 import "core:math/rand"
-// import "core:mem"
 import rl "vendor:raylib"
 
 Particles :: enum {
@@ -119,11 +118,11 @@ controls :: proc() {
 		initGame()
 	}
 
-	if rl.IsKeyPressed(.RIGHT) {
+	if rl.IsKeyPressed(.D) {
 		p_num = (p_num + 1) %% len(p_type)
 	}
 
-	if rl.IsKeyPressed(.LEFT) {
+	if rl.IsKeyPressed(.A) {
 		if p_num > 0 do p_num -= 1
 		else do p_num = len(p_type) - 1
 	}
@@ -136,11 +135,11 @@ controls :: proc() {
 		showFPS = !showFPS
 	}
 
-	if rl.IsKeyPressed(.UP) {
+	if rl.IsKeyPressed(.W) {
 		brush_size *= 2
 	}
 
-	if rl.IsKeyPressed(.DOWN) {
+	if rl.IsKeyPressed(.S) {
 		if brush_size > 1 {
 			brush_size /= 2
 		}
@@ -321,7 +320,7 @@ setDispRate :: proc(particle: Particle) -> int {
 	return 0
 }
 
-// controls movement horizontally based on the disp_rate
+// controls movement based on the disp_rate
 dispMovement :: proc(row, col, x, y: int) {
 	col := col
 	row := row
@@ -407,7 +406,12 @@ swapParticles :: proc(row1, col1, row2, col2: int) {
 		// Updates Particles 
 		cells[row1][col1].updated = true
 		cells[row2][col2].updated = true
+	}
+}
 
+checkThenSwap :: proc(row, col, r, c: int, type: Particles) {
+	if checkParticle(row, col, r, c, type) {
+		swapParticles(row, col, row + r, col + c)
 	}
 }
 
@@ -599,7 +603,10 @@ fireInteractions :: proc(row, col: int) {
 	side := rand.choice(([]int){-1, 1})
 
 	// Steam
-	changeParticle(row, col, 1, 0, 0, .Steam, .None, false) // Below
+	checkThenSwap(row, col, 1, 0, .Steam)
+
+	// smoke
+	checkThenSwap(row, col, 1, 0, .Smoke)
 
 	// Water
 	changeParticle(row, col, -1, 0, 0, .Water, .Steam) // Above
@@ -639,7 +646,7 @@ fireMovement :: proc(row, col: int) {
 	}
 }
 
-// // Update fire particle
+// Update fire particle
 updateFire :: proc(row, col: int) {
 	if !inBounds(row, col) || cells[row][col].type != .Fire {
 		return
@@ -683,11 +690,6 @@ addSmoke :: proc(row, col: int) {
 smokeInteractions :: proc(row, col: int) {
 	// water
 	if checkParticle(row, col, -1, 0, .Water) {
-		swapParticles(row, col, row - 1, col)
-	}
-
-	// fire
-	if checkParticle(row, col, -1, 0, .Fire) {
 		swapParticles(row, col, row - 1, col)
 	}
 }
