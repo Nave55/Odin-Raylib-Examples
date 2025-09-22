@@ -1,5 +1,6 @@
 package falling_sands
 
+import "core:crypto/_aes/hw_intel"
 import "core:fmt"
 import "core:math"
 import "core:math/rand"
@@ -55,6 +56,7 @@ showFPS: bool // shows the fps
 brush_size: int // size of the brush
 
 main :: proc() {
+	rl.SetTraceLogLevel(.ERROR)
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Falling Sands Simulation")
 	rl.SetTargetFPS(FPS)
 	defer rl.CloseWindow()
@@ -303,7 +305,7 @@ setDispRate :: proc(particle: Particle) -> int {
 	case .None:
 		return 0
 	case .Water:
-		return 5
+		return 3
 	case .Sand:
 		return 1
 	case .Rock:
@@ -362,9 +364,11 @@ particleHealthZero :: proc(
 
 		cells[row + r][col + c].health += h_add_s
 
-		if cells[row][col].health < 1 do cells[row][col].health += h_add_p
+		particle_health := cells[row][col].health
+		cells[row][col].health = particle_health + h_add_p <= 1 ? particle_health + h_add_p : 1
 
-		if cells[row + r][col + c].health <= .10 {
+
+		if cells[row + r][col + c].health <= .02 {
 			if extra == 's' do addSmoke(row + r, col + c)
 		}
 
@@ -391,7 +395,7 @@ changeParticle :: proc(
 			if chance == 0 {
 				if secondary do addParticle(row + r, col + c, typeto)
 				else do addParticle(row, col, typeto)
-			} 
+			}
 		}
 	}
 }
@@ -617,10 +621,10 @@ fireInteractions :: proc(row, col: int) {
 	changeParticle(row, col, -1, 0, 0, .Sand, .None, true, false) // Above
 
 	// Wood
-	particleHealthZero(row, col, -1, 0, .Wood, .Fire, -.01, .01, 's', false, true) // Above
-	particleHealthZero(row, col, 1, 0, .Wood, .Fire, -.01, .01, 's', false, true) // Below
-	particleHealthZero(row, col, 0, -1, .Wood, .Fire, -.01, .01, 's', false, true) // Side
-	particleHealthZero(row, col, 0, 1, .Wood, .Fire, -.01, .01, 's', false, true) // Side
+	particleHealthZero(row, col, -1, 0, .Wood, .Fire, -.05, .01, 's', false, true) // Above
+	particleHealthZero(row, col, 1, 0, .Wood, .Fire, -.05, .01, 's', false, true) // Below
+	particleHealthZero(row, col, 0, -1, .Wood, .Fire, -.05, .01, 's', false, true) // Side
+	particleHealthZero(row, col, 0, 1, .Wood, .Fire, -.05, .01, 's', false, true) // Side
 }
 
 fireMovement :: proc(row, col: int) {
@@ -801,3 +805,4 @@ particleSimulation :: proc() {
 	// **Fourth Pass: Update Smoke Particles**
 	simulationPasses(.Smoke)
 }
+
