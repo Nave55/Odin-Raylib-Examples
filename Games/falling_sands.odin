@@ -1,6 +1,5 @@
 package falling_sands
 
-import "core:crypto/_aes/hw_intel"
 import "core:fmt"
 import "core:math"
 import "core:math/rand"
@@ -805,4 +804,5 @@ particleSimulation :: proc() {
 	// **Fourth Pass: Update Smoke Particles**
 	simulationPasses(.Smoke)
 }
+
 
