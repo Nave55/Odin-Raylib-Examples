@@ -620,10 +620,10 @@ fireInteractions :: proc(row, col: int) {
 	changeParticle(row, col, -1, 0, 0, .Sand, .None, true, false) // Above
 
 	// Wood
-	particleHealthZero(row, col, -1, 0, .Wood, .Fire, -.05, .01, 's', false, true) // Above
-	particleHealthZero(row, col, 1, 0, .Wood, .Fire, -.05, .01, 's', false, true) // Below
-	particleHealthZero(row, col, 0, -1, .Wood, .Fire, -.05, .01, 's', false, true) // Side
-	particleHealthZero(row, col, 0, 1, .Wood, .Fire, -.05, .01, 's', false, true) // Side
+	particleHealthZero(row, col, -1, 0, .Wood, .Fire, -.02, .02, 's', false, true) // Above
+	particleHealthZero(row, col, 1, 0, .Wood, .Fire, -.02, .02, 's', false, true) // Below
+	particleHealthZero(row, col, 0, -1, .Wood, .Fire, -.02, .02, 's', false, true) // Side
+	particleHealthZero(row, col, 0, 1, .Wood, .Fire, -.02, .02, 's', false, true) // Side
 }
 
 fireMovement :: proc(row, col: int) {
@@ -804,5 +804,4 @@ particleSimulation :: proc() {
 	// **Fourth Pass: Update Smoke Particles**
 	simulationPasses(.Smoke)
 }
-
 
