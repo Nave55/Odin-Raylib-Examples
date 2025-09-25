@@ -5,12 +5,12 @@ package box
 *   simple box2d implementation
 *   
 *   controls - 'left click' adds objects, and 'right click' deletes them
-*              'x' alternates betweeen boxes and balls
-*              'w' and 's' change the size of the balls and boxes depending on which is selected
-*              'c' changes the color of the boxes and balls depending on which is selected       
+*              'x' alternates betweeen objects
+*              'w' and 's' to increase or decrease size of objects
+*              'c' changes the color of the objects      
 *              'a' decreases time_step and 'd' increases time_step
-*              'space' stops all movement   
-*               'r' resets the simulation           
+*              'space' pauses simulation   
+*              'r' resets the simulation           
 *
 *   Created by Evan Martinez (@Nave55)
 *
