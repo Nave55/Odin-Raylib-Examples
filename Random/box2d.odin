@@ -43,7 +43,7 @@ entities: [dynamic]Entity
 pause: bool
 obj_size: f32
 selector: ObjType
-clr: u8
+clr: rl.Color
 
 main :: proc() {
 	rl.SetTraceLogLevel(.ERROR)
@@ -98,18 +98,18 @@ rayPos :: proc(pos, dim: rl.Vector2, t: ObjType, move: bool) -> rl.Vector2 {
 	return pos
 }
 
-u8ToColor :: proc(val: u8) -> rl.Color {
+switchColor :: proc(val: rl.Color) -> rl.Color {
 	switch val {
-	case 0:
-		return rl.BLUE
-	case 1:
+	case rl.BLUE:
 		return rl.GREEN
-	case 2:
+	case rl.GREEN:
 		return rl.YELLOW
-	case 3:
+	case rl.YELLOW:
 		return rl.PURPLE
-	case 4:
+	case rl.PURPLE:
 		return rl.ORANGE
+	case rl.ORANGE:
+		return rl.BLUE
 	}
 
 	return rl.BLUE
@@ -117,7 +117,7 @@ u8ToColor :: proc(val: u8) -> rl.Color {
 
 // init game with starting state
 initGame :: proc() {
-	clr = 0
+	clr = rl.BLUE
 	obj_size = 20
 	selector = .Box
 	pause = false
@@ -189,7 +189,7 @@ gameControls :: proc() {
 			boxEntityInit(
 				rl.GetMousePosition(),
 				{obj_size, obj_size},
-				u8ToColor(clr),
+				clr,
 				{1, 1},
 				true,
 				.Ball,
@@ -201,7 +201,7 @@ gameControls :: proc() {
 			boxEntityInit(
 				rl.GetMousePosition(),
 				{obj_size, obj_size},
-				u8ToColor(clr),
+				clr,
 				{1, 1},
 				true,
 				.Box,
@@ -253,7 +253,7 @@ gameControls :: proc() {
 		if obj_size >= 20 do obj_size -= 10
 	}
 	// pressing 'c' changes color of boxes and balls depending on selector
-	if rl.IsKeyPressed(.C) do clr = (clr + 1) % 5
+	if rl.IsKeyPressed(.C) do clr = switchColor(clr)
 
 	// press 'a' to slow simulation and 'd' to speed it up
 	if rl.IsKeyPressed(.D) do time_step += .001
@@ -296,7 +296,7 @@ drawGame :: proc() {
 
 	mouse := rl.GetMousePosition()
 	if selector == .Box {
-		b_clr := u8ToColor(clr)
+		b_clr := clr
 		rl.DrawRectangleRec(
 			{mouse.x - obj_size, mouse.y - obj_size, obj_size * 2, obj_size * 2},
 			{b_clr.r, b_clr.g, b_clr.b, 200},
@@ -304,7 +304,7 @@ drawGame :: proc() {
 	}
 
 	if selector == .Ball {
-		b_clr := u8ToColor(clr)
+		b_clr := clr
 		rl.DrawCircleV({mouse.x, mouse.y}, obj_size, {b_clr.r, b_clr.g, b_clr.b, 200})
 	}
 
@@ -321,4 +321,3 @@ unloadGame :: proc() {
 	b2.DestroyWorld(world_id)
 	delete(entities)
 }
-
