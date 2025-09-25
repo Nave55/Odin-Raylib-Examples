@@ -247,10 +247,10 @@ gameControls :: proc() {
 	}
 
 	// press 'up' or 'down' to change boxes and ball size
-	if rl.IsKeyPressed(.W) do obj_size += 10
+	if rl.IsKeyPressed(.W) do obj_size += 5
 
 	if rl.IsKeyPressed(.S) {
-		if obj_size >= 20 do obj_size -= 10
+		if obj_size >= 10 do obj_size -= 5
 	}
 	// pressing 'c' changes color of boxes and balls depending on selector
 	if rl.IsKeyPressed(.C) do clr = switchColor(clr)
@@ -321,3 +321,4 @@ unloadGame :: proc() {
 	b2.DestroyWorld(world_id)
 	delete(entities)
 }
+
