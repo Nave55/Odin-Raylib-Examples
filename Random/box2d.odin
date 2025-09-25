@@ -34,8 +34,13 @@ Entity :: struct {
 	type:    ObjType,
 }
 
+// constants
 SCREEN_WIDTH :: 1280
 SCREEN_HEIGHT :: 720
+PAUSE_TEXT: cstring : "PRESS SPACE TO CONTINUE"
+
+// globals
+pause_text_size := rl.MeasureText(PAUSE_TEXT, 40)
 time_step: f32
 sub_steps: i32
 world_id: b2.WorldId
@@ -308,7 +313,7 @@ drawGame :: proc() {
 		rl.DrawCircleV({mouse.x, mouse.y}, obj_size, {b_clr.r, b_clr.g, b_clr.b, 200})
 	}
 
-	if pause do rl.DrawText("PRESS SPACE TO CONTINUE", SCREEN_WIDTH / 2 - rl.MeasureText("PRESS SPACE TO CONTINUE", 40) / 2, SCREEN_HEIGHT / 2 - 50, 40, rl.RED)
+	if pause do rl.DrawText(PAUSE_TEXT, SCREEN_WIDTH / 2 - pause_text_size / 2, SCREEN_HEIGHT / 2 - 50, 40, rl.RED)
 }
 
 updateGame :: proc() {
@@ -321,4 +326,3 @@ unloadGame :: proc() {
 	b2.DestroyWorld(world_id)
 	delete(entities)
 }
-
