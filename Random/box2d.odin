@@ -16,6 +16,7 @@ package box
 *
 ***************************************************************************************************************/
 
+import "core:fmt"
 import b2 "vendor:box2d"
 import rl "vendor:raylib"
 
@@ -40,7 +41,7 @@ SCREEN_HEIGHT :: 720
 PAUSE_TEXT: cstring : "PRESS SPACE TO CONTINUE"
 
 // globals
-pause_text_size := rl.MeasureText(PAUSE_TEXT, 40)
+pause_text_size: i32
 time_step: f32
 sub_steps: i32
 world_id: b2.WorldId
@@ -55,13 +56,11 @@ main :: proc() {
 	rl.SetConfigFlags({.MSAA_4X_HINT})
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Box2D")
 	rl.SetTargetFPS(1000)
-	defer {
-		rl.CloseWindow()
-		unloadGame()
-	}
 	initGame()
 
 	for !rl.WindowShouldClose() do updateGame()
+	unloadGame()
+	rl.CloseWindow()
 }
 
 // procedures to help with printing text for simulation
@@ -122,6 +121,7 @@ switchColor :: proc(val: rl.Color) -> rl.Color {
 
 // init game with starting state
 initGame :: proc() {
+	pause_text_size = rl.MeasureText(PAUSE_TEXT, 40)
 	clr = rl.BLUE
 	obj_size = 20
 	selector = .Box
@@ -313,7 +313,7 @@ drawGame :: proc() {
 		rl.DrawCircleV({mouse.x, mouse.y}, obj_size, {b_clr.r, b_clr.g, b_clr.b, 200})
 	}
 
-	if pause do rl.DrawText(PAUSE_TEXT, SCREEN_WIDTH / 2 - pause_text_size / 2, SCREEN_HEIGHT / 2 - 50, 40, rl.RED)
+	if pause do rl.DrawText(PAUSE_TEXT, (SCREEN_WIDTH / 2) - (pause_text_size / 2), SCREEN_HEIGHT / 2 - 50, 40, rl.RED)
 }
 
 updateGame :: proc() {
