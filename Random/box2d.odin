@@ -1,6 +1,5 @@
 package box
 
-import "core:unicode/utf8/utf8string"
 /*************************************************************************************************************
 *
 *   simple box2d implementation
@@ -17,7 +16,6 @@ import "core:unicode/utf8/utf8string"
 *
 ***************************************************************************************************************/
 
-import "core:fmt"
 import b2 "vendor:box2d"
 import rl "vendor:raylib"
 
@@ -322,3 +320,4 @@ unloadGame :: proc() {
 	b2.DestroyWorld(world_id)
 	delete(entities)
 }
+
