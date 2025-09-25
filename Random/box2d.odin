@@ -279,20 +279,19 @@ drawGame :: proc() {
 	rl.ClearBackground(rl.BLACK)
 
 	for &i in entities {
-		using i
 		if i.type == .Box {
-			if move {
-				rot := b2.Rot_GetAngle(b2.Body_GetRotation(body_id))
-				posi := rayPos(pos, dim, type, move)
+			if i.move {
+				rot := b2.Rot_GetAngle(b2.Body_GetRotation(i.body_id))
+				posi := rayPos(i.pos, i.dim, i.type, i.move)
 				rl.DrawRectanglePro(
-					{pos.x, pos.y, dim.x * 2, dim.y * 2},
-					{dim.x, dim.y},
+					{i.pos.x, i.pos.y, i.dim.x * 2, i.dim.y * 2},
+					{i.dim.x, i.dim.y},
 					rot * (180 / 3.14),
-					col,
+					i.col,
 				)
-			} else do rl.DrawRectangleV(rayPos(pos, dim, type, move), dim, col)
+			} else do rl.DrawRectangleV(rayPos(i.pos, i.dim, i.type, i.move), i.dim, i.col)
 		}
-		if i.type == .Ball do rl.DrawCircleV(rayPos(pos, dim, type, move), dim.x, col)
+		if i.type == .Ball do rl.DrawCircleV(rayPos(i.pos, i.dim, i.type, i.move), i.dim.x, i.col)
 	}
 
 	mouse := rl.GetMousePosition()
@@ -322,3 +321,4 @@ unloadGame :: proc() {
 	b2.DestroyWorld(world_id)
 	delete(entities)
 }
+
