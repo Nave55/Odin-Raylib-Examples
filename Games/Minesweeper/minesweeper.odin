@@ -10,10 +10,10 @@ package minesweeper
 import sa "core:container/small_array"
 import "core:fmt"
 import "core:math"
-import "core:slice"
-import "core:time"
 import "core:mem"
 import vm "core:mem/virtual"
+import "core:slice"
+import "core:time"
 import rl "vendor:raylib"
 
 // enum for tile markings
@@ -34,12 +34,12 @@ TileInfo :: struct {
 
 // Game Data to be passed to functions
 GameData :: struct {
-	game_over: bool,
+	game_over:  bool,
 	first_move: bool,
 	bombs_left: i32,
 	victory:    bool,
 	stopwatch:  time.Stopwatch,
-	visited:    map[[2]int]struct{},
+	visited:    map[[2]int]struct {},
 	int_map:    map[int]rl.Texture2D,
 	enum_map:   map[Mark]rl.Texture2D,
 }
@@ -59,9 +59,9 @@ grid: [16][16]TileInfo
 main :: proc() {
 	arena: vm.Arena
 	err := vm.arena_init_static(&arena, 4 * mem.Kilobyte)
-    	assert(err == .None)
-    	arena_allocator := vm.arena_allocator(&arena)
-    	defer vm.arena_destroy(&arena)
+	assert(err == .None)
+	arena_allocator := vm.arena_allocator(&arena)
+	defer vm.arena_destroy(&arena)
 
 	rl.SetTraceLogLevel(.NONE)
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Minesweeper")
@@ -78,7 +78,8 @@ main :: proc() {
 
 // Main Game Loop Functions
 
-@require_results
+
+@(require_results)
 initGameData :: proc(arena_allocator: mem.Allocator) -> GameData {
 	game_data := GameData {
 		false,
@@ -86,13 +87,13 @@ initGameData :: proc(arena_allocator: mem.Allocator) -> GameData {
 		0,
 		false,
 		{},
-		make(map[[2]int]struct{}, 100, context.temp_allocator),
+		make(map[[2]int]struct {}, 100, context.temp_allocator),
 		make(map[int]rl.Texture2D, arena_allocator),
 		make(map[Mark]rl.Texture2D, arena_allocator),
 	}
 
 	return game_data
-} 
+}
 
 // initialize game on each start
 initGame :: proc(game_data: ^GameData) {
@@ -134,8 +135,9 @@ updateGame :: proc(game_data: ^GameData, arena: ^vm.Arena) {
 	drawGame(game_data)
 }
 
-// Grid Functions for init
-// initializes all tiles starting conditions
+/* Grid Functions for init
+initializes all tiles starting conditions
+*/
 initalizeGrid :: proc() {
 	for &r_val, r_ind in grid {
 		for &c_val, c_ind in r_val {
@@ -149,9 +151,10 @@ initalizeGrid :: proc() {
 		}
 	}
 }
+
 // sets all tile values
 setGridVals :: proc(pos: [2]int) {
-	x := make(map[i32]struct{}, context.temp_allocator)
+	x := make(map[i32]struct {}, context.temp_allocator)
 	defer free_all(context.temp_allocator)
 
 	num := i32(pos.x * 16 + pos.y)
@@ -164,7 +167,7 @@ setGridVals :: proc(pos: [2]int) {
 
 	ttl: i32 = 0
 	for r_val, r_ind in grid {
-		for c_val, c_ind in r_val {
+		for _, c_ind in r_val {
 			if ttl in x {
 				grid[r_ind][c_ind].value = -1
 			}
@@ -175,6 +178,7 @@ setGridVals :: proc(pos: [2]int) {
 }
 
 // Controls
+
 
 // Reveal tile. 
 unveilTile :: proc(game_data: ^GameData) {
@@ -227,7 +231,7 @@ markTile :: proc() {
 }
 
 // Checks if hovering over smiley face
-@require_results
+@(require_results)
 hoverSmiley :: proc() -> bool {
 	face_loc: rl.Vector2 = {336, 56}
 	m_pos := rl.GetMousePosition()
@@ -243,7 +247,11 @@ bombsAndVictory :: proc(game_data: ^GameData) {
 	for &i in grid {
 		for &j in i {
 			if game_data.victory && j.value == -1 do j.mark = .Flag
-			if !game_data.victory && game_data.game_over && j.value == -1 && j.revealed && j.mark == .Clear {
+			if !game_data.victory &&
+			   game_data.game_over &&
+			   j.value == -1 &&
+			   j.revealed &&
+			   j.mark == .Clear {
 				j.value -= 1
 			}
 			if j.mark == .Flag do bombs += 1
@@ -268,7 +276,7 @@ loadTextures :: proc(game_data: ^GameData) {
 	game_data.int_map[-3] = rl.LoadTexture("textures/bad_marked.png")
 	game_data.int_map[-2] = rl.LoadTexture("textures/exploded.png")
 	game_data.int_map[-1] = rl.LoadTexture("textures/bomb.png")
-	game_data.int_map[0] = rl.LoadTexture("textures/clear.png")	
+	game_data.int_map[0] = rl.LoadTexture("textures/clear.png")
 	game_data.int_map[1] = rl.LoadTexture("textures/one.png")
 	game_data.int_map[2] = rl.LoadTexture("textures/two.png")
 	game_data.int_map[3] = rl.LoadTexture("textures/three.png")
@@ -283,7 +291,7 @@ loadTextures :: proc(game_data: ^GameData) {
 	game_data.int_map[12] = rl.LoadTexture("textures/sunglasses.png")
 	game_data.int_map[13] = rl.LoadTexture("textures/smile_clear.png")
 }
-	
+
 // Draw Textures
 drawTextures :: proc(game_data: ^GameData) {
 	for &i in grid {
@@ -355,7 +363,8 @@ drawBombTracker :: proc(game_data: GameData) {
 
 	rl.DrawText(
 		rl.TextFormat("%v", game_data.bombs_left),
-		i32(rect.x + rect.width / 2) - rl.MeasureText(rl.TextFormat("%v", game_data.bombs_left), 40) / 2,
+		i32(rect.x + rect.width / 2) -
+		rl.MeasureText(rl.TextFormat("%v", game_data.bombs_left), 40) / 2,
 		i32(rect.y + 10),
 		40,
 		rl.RED,
@@ -384,19 +393,19 @@ drawTimer :: proc(game_data: ^GameData) {
 // Helper Functions
 
 // Checks if pos is within bounds of the grid
-@require_results
+@(require_results)
 inBounds :: proc(pos: [2]int, width, height: int) -> bool {
 	return pos.x >= 0 && pos.y >= 0 && pos.x < height && pos.y < width
 }
 
 // Retrieves value from grid given [2]int pos
-@require_results
+@(require_results)
 fetchVal :: proc(mat: ^[16][16]TileInfo, pos: [2]int) -> ^TileInfo {
 	return &mat[pos.x][pos.y]
 }
 
 // Find Indexes and values in 8 directions from a given [2]int pos
-@require_results
+@(require_results)
 nbrs :: proc(
 	mat: ^[16][16]TileInfo,
 	pos: [2]int,
@@ -407,7 +416,7 @@ nbrs :: proc(
 	width, height := len(mat[0]), len(mat)
 	dirs: [8][2]int = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}}
 
-	for val, ind in dirs {
+	for val in dirs {
 		n_pos := pos + val
 		if inBounds(n_pos, width, height) {
 			sa.append(&inds, n_pos)
@@ -432,7 +441,7 @@ printGridVals :: proc(mat: ^[16][16]TileInfo) {
 }
 
 // Calculates tile pos in grid from a Vector2d
-@require_results
+@(require_results)
 getTilePos :: proc(pos: rl.Vector2) -> [2]int {
 	x_pos := int(math.floor((pos.x - 21) / 40))
 	y_pos := int(math.floor((pos.y - 116) / 40))
@@ -465,7 +474,7 @@ debugGame :: proc(val: $T, col: rl.Color = rl.RED, size: i32 = 20, x: i32 = 5, y
 }
 
 // If you click a tile it will run a dfs to see what tiles should be revealed
-dfs :: proc(mat: ^[16][16]TileInfo, pos: [2]int, mp: ^map[[2]int]struct{}) {
+dfs :: proc(mat: ^[16][16]TileInfo, pos: [2]int, mp: ^map[[2]int]struct {}) {
 	val := fetchVal(mat, pos)
 
 	val.revealed = true
@@ -481,6 +490,7 @@ dfs :: proc(mat: ^[16][16]TileInfo, pos: [2]int, mp: ^map[[2]int]struct{}) {
 			b.revealed = true
 			b.mark = .Clear
 		}
+
 		dfs(mat, i, mp)
 	}
 }
