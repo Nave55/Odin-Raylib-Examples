@@ -49,11 +49,12 @@ SCREEN_WIDTH :: 687
 SCREEN_HEIGHT :: 777
 COLS :: 16
 ROWS :: 16
+TILES :: COLS * ROWS
 TILE_SIZE :: 40
 BOMBS :: 40
 
 // grid 
-grid: [16][16]TileInfo
+grid: [ROWS][COLS]TileInfo
 
 // main proc
 main :: proc() {
@@ -63,12 +64,10 @@ main :: proc() {
 	arena_allocator := vm.arena_allocator(&arena)
 	defer vm.arena_destroy(&arena)
 
-	rl.SetTraceLogLevel(.NONE)
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Minesweeper")
 	defer rl.CloseWindow()
 	rl.SetTargetFPS(30)
 
-	// unloadGame(&game_data)
 	game_data := initGameData(arena_allocator)
 	loadTextures(&game_data)
 	initGame(&game_data)
@@ -154,27 +153,20 @@ initalizeGrid :: proc() {
 
 // sets all tile values
 setGridVals :: proc(pos: [2]int) {
-	x := make(map[i32]struct {}, context.temp_allocator)
+	x := make(map[i32]struct {}, context.temp_allocator) // create set to track bomb locations
 	defer free_all(context.temp_allocator)
 
-	num := i32(pos.x * 16 + pos.y)
+	num := i32(pos.x * ROWS + pos.y) // pos where player clicked as first move
 
 	for len(x) < BOMBS {
-		val := rl.GetRandomValue(0, 255)
-		for val == num do val = rl.GetRandomValue(0, 255)
+		val := rl.GetRandomValue(0, TILES - 1)
+		for val == num do val = rl.GetRandomValue(0, TILES - 1) // make sure bomb location isn't same as player
 		x[val] = {}
+		setGridPosFromNum(val, -1) // set bomb tiles to -1 
 	}
 
-	ttl: i32 = 0
-	for r_val, r_ind in grid {
-		for _, c_ind in r_val {
-			if ttl in x {
-				grid[r_ind][c_ind].value = -1
-			}
-			ttl += 1
-		}
-	}
 	setTileVals(&grid)
+	printGridVals(grid)
 }
 
 // Controls
@@ -184,7 +176,7 @@ setGridVals :: proc(pos: [2]int) {
 unveilTile :: proc(game_data: ^GameData) {
 	m_pos := rl.GetMousePosition()
 	t_pos := getTilePos(m_pos)
-	if inBounds(t_pos, 16, 16) {
+	if inBounds(t_pos, ROWS, COLS) {
 		if game_data.first_move {
 			game_data.first_move = false
 			setGridVals(t_pos)
@@ -200,12 +192,13 @@ unveilTile :: proc(game_data: ^GameData) {
 }
 
 // Returns a tile pos if you are hovering a tile that hasn't been revealed
+@(require_results)
 hoverTile :: proc() -> (t_pos: [2]int) {
 	if rl.IsMouseButtonDown(.LEFT) {
 		m_pos := rl.GetMousePosition()
 		t_pos = getTilePos(m_pos)
-		if inBounds(t_pos, 16, 16) {
-			if fetchVal(&grid, t_pos).revealed == false do return
+		if inBounds(t_pos, ROWS, COLS) {
+			if !fetchVal(&grid, t_pos).revealed do return
 		}
 	}
 	return {-1, -1}
@@ -215,7 +208,7 @@ hoverTile :: proc() -> (t_pos: [2]int) {
 markTile :: proc() {
 	m_pos := rl.GetMousePosition()
 	t_pos := getTilePos(m_pos)
-	if inBounds(t_pos, 16, 16) {
+	if inBounds(t_pos, ROWS, COLS) {
 		val := fetchVal(&grid, t_pos)
 		if !val.revealed {
 			switch val.mark {
@@ -400,14 +393,14 @@ inBounds :: proc(pos: [2]int, width, height: int) -> bool {
 
 // Retrieves value from grid given [2]int pos
 @(require_results)
-fetchVal :: proc(mat: ^[16][16]TileInfo, pos: [2]int) -> ^TileInfo {
+fetchVal :: proc(mat: ^[ROWS][COLS]TileInfo, pos: [2]int) -> ^TileInfo {
 	return &mat[pos.x][pos.y]
 }
 
 // Find Indexes and values in 8 directions from a given [2]int pos
 @(require_results)
 nbrs :: proc(
-	mat: ^[16][16]TileInfo,
+	mat: ^[ROWS][COLS]TileInfo,
 	pos: [2]int,
 ) -> (
 	inds: sa.Small_Array(8, [2]int),
@@ -428,7 +421,7 @@ nbrs :: proc(
 }
 
 // Prints Grid To Console if you want to verify values.
-printGridVals :: proc(mat: ^[16][16]TileInfo) {
+printGridVals :: proc(mat: [ROWS][COLS]TileInfo) {
 	for i in mat {
 		fmt.print("[")
 		for j, ind in i {
@@ -448,11 +441,20 @@ getTilePos :: proc(pos: rl.Vector2) -> [2]int {
 	return {y_pos, x_pos}
 }
 
+// takes a tile number and a val and then sets the tile value to that val
+setGridPosFromNum :: proc(num: i32, val_to_set: int) {
+	row := i32(math.floor(f32(num) / ROWS))
+	col := num % COLS
+	grid[row][col].value = val_to_set
+
+	return
+}
+
 // Calculates how many bombs each tile touches
-setTileVals :: proc(mat: ^[16][16]TileInfo) {
+setTileVals :: proc(mat: ^[ROWS][COLS]TileInfo) {
+	defer free_all(context.temp_allocator)
 	for &i, c_ind in mat {
 		for &j, r_ind in i {
-			defer free_all(context.temp_allocator)
 			if j.value != -1 {
 				_, vals := nbrs(mat, {c_ind, r_ind})
 				filt := len(
@@ -474,7 +476,7 @@ debugGame :: proc(val: $T, col: rl.Color = rl.RED, size: i32 = 20, x: i32 = 5, y
 }
 
 // If you click a tile it will run a dfs to see what tiles should be revealed
-dfs :: proc(mat: ^[16][16]TileInfo, pos: [2]int, mp: ^map[[2]int]struct {}) {
+dfs :: proc(mat: ^[ROWS][COLS]TileInfo, pos: [2]int, mp: ^map[[2]int]struct {}) {
 	val := fetchVal(mat, pos)
 
 	val.revealed = true
