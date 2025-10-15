@@ -306,7 +306,10 @@ dfs :: proc(mat: ^[ROWS][COLS]TileInfo, pos: [2]int, game_data: ^GameData) {
 
 	val := fetchVal(mat, pos)
 	val.revealed = true
-	val.nr_value = .Tile
+	if val.nr_value == .Flag {
+		game_data.bombs_left += 1
+		val.nr_value = .Tile
+	}
 
 	if val.r_value != .Clear || pos in game_data.visited do return
 	game_data.visited[pos] = {}
