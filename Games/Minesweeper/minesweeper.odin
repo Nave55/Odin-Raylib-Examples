@@ -546,7 +546,7 @@ dfs :: proc(mat: ^[ROWS][COLS]TileInfo, pos: [2]int, mp: ^map[[2]int]struct {}) 
 	val := fetchVal(mat, pos)
 
 	val.revealed = true
-	// val.nr_value = .Tile
+	val.nr_value = .Tile
 	if val.r_value != .Clear || pos in mp do return
 
 	mp[pos] = {}
