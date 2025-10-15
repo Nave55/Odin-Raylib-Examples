@@ -78,6 +78,7 @@ GameData :: struct {
 	victory:    bool,
 	stopwatch:  time.Stopwatch,
 	visited:    map[[2]int]struct {},
+	revealed:   map[int]struct {},
 	tile_map:   map[Textures]rl.Texture2D,
 }
 
@@ -158,7 +159,7 @@ controls :: proc(game_data: ^GameData, arena: ^vm.Arena) {
 	}
 
 	if rl.IsMouseButtonReleased(.RIGHT) {
-		if !game_data.game_over do markTile()
+		if !game_data.game_over do markTile(game_data)
 	}
 }
 
@@ -176,7 +177,6 @@ drawGame :: proc(game_data: ^GameData) {
 // update game loop
 updateGame :: proc(game_data: ^GameData, arena: ^vm.Arena) {
 	controls(game_data, arena)
-	bombsAndVictory(game_data)
 	drawGame(game_data)
 }
 
@@ -217,10 +217,11 @@ initGameData :: proc(arena_allocator: mem.Allocator) -> GameData {
 	game_data := GameData {
 		false,
 		true,
-		0,
+		BOMBS,
 		false,
 		{},
 		make(map[[2]int]struct {}, 100, arena_allocator),
+		make(map[int]struct {}, ROWS * COLS - BOMBS, arena_allocator),
 		make(map[Textures]rl.Texture2D, 21, arena_allocator),
 	}
 
@@ -246,9 +247,11 @@ initalizeGrid :: proc() {
 // initialize game on each start
 initGame :: proc(game_data: ^GameData) {
 	clear(&game_data.visited)
+	clear(&game_data.revealed)
 	game_data.first_move = true
 	game_data.game_over = false
 	game_data.victory = false
+	game_data.bombs_left = BOMBS
 	time.stopwatch_reset(&game_data.stopwatch)
 	initalizeGrid()
 }
@@ -258,7 +261,7 @@ initializeGridVals :: proc(pos: [2]int) {
 	x := make(map[i32]struct {}, context.temp_allocator) // create set to track bomb locations
 	defer free_all(context.temp_allocator)
 
-	num := i32(pos.x * ROWS + pos.y) // pos where player clicked as first move
+	num := i32(posToNum(pos)) // pos where player clicked as first move
 
 	for len(x) < BOMBS {
 		val := rl.GetRandomValue(0, TILES - 1)
@@ -291,31 +294,31 @@ fetchVal :: proc(mat: ^[ROWS][COLS]TileInfo, pos: [2]int) -> ^TileInfo {
 // Calculates tile pos in grid from a Vector2d
 @(require_results)
 getTilePos :: proc(pos: rl.Vector2) -> [2]int {
-	x_pos := int(math.floor((pos.x - 21) / 40))
-	y_pos := int(math.floor((pos.y - 116) / 40))
+	x_pos := int(math.floor((pos.x - 21) / TILE_SIZE))
+	y_pos := int(math.floor((pos.y - 116) / TILE_SIZE))
 	return {y_pos, x_pos}
 }
 
+
 // If you click a tile it will run a dfs to see what tiles should be revealed
-dfs :: proc(mat: ^[ROWS][COLS]TileInfo, pos: [2]int, mp: ^map[[2]int]struct {}) {
+dfs :: proc(mat: ^[ROWS][COLS]TileInfo, pos: [2]int, game_data: ^GameData) {
 	val := fetchVal(mat, pos)
 
 	val.revealed = true
 	val.nr_value = .Tile
-	if val.r_value != .Clear || pos in mp do return
 
-	mp[pos] = {}
+	#partial switch val.r_value {
+	case .Clear, .One, .Two, .Three, .Four, .Five, .Six, .Seven, .Eight:
+		game_data.revealed[posToNum(pos)] = {}
+	}
+
+	if val.r_value != .Clear || pos in game_data.visited do return
+	game_data.visited[pos] = {}
 
 	inds, _ := nbrs(mat, pos)
 	for i in sa.slice(&inds) {
 		b := fetchVal(mat, i)
-		#partial switch b.r_value {
-		case .One, .Two, .Three, .Four, .Five, .Six, .Seven, .Eight:
-			b.revealed = true
-			b.nr_value = .Tile
-		}
-
-		dfs(mat, i, mp)
+		dfs(mat, i, game_data)
 	}
 }
 
@@ -361,8 +364,8 @@ unveilTile :: proc(game_data: ^GameData) {
 		// if nr_value is .Tile run dfs to see if tiles should be revealed
 		val := fetchVal(&grid, t_pos)
 		if val.nr_value == .Tile {
-			dfs(&grid, t_pos, &game_data.visited)
-			if val.revealed && val.r_value == .Bomb do game_data.game_over = true // fail condition
+			dfs(&grid, t_pos, game_data)
+			winOrLose(game_data, val)
 		}
 	}
 }
@@ -377,8 +380,8 @@ hoverTile :: proc() -> (t_pos: [2]int) {
 	return {-1, -1}
 }
 
-// If right click release cycle through clear, bomb, and question enum.
-markTile :: proc() {
+// If right click release cycle through tile, bomb, and question enum.
+markTile :: proc(game_data: ^GameData) {
 	t_pos := getTilePos(rl.GetMousePosition())
 	if inBounds(t_pos, ROWS, COLS) {
 		val := fetchVal(&grid, t_pos)
@@ -386,8 +389,10 @@ markTile :: proc() {
 			#partial switch val.nr_value {
 			case .Tile:
 				val.nr_value = .Flag
+				game_data.bombs_left -= 1
 			case .Flag:
 				val.nr_value = .Question
+				game_data.bombs_left += 1
 			case .Question:
 				val.nr_value = .Tile
 			case:
@@ -415,31 +420,33 @@ hoverSmiley :: proc() -> bool {
 ********************************************************************************************/
 
 // checks how many bombs are left and also victory conditions
-bombsAndVictory :: proc(game_data: ^GameData) {
-	clear: i32 = 0
-	bombs: i32 = 0
-
-	for &i in grid {
-		for &j in i {
-			if game_data.victory && j.r_value == .Bomb do j.nr_value = .Flag
-			if !game_data.victory &&
-			   game_data.game_over &&
-			   j.r_value == .Bomb &&
-			   j.revealed &&
-			   j.nr_value == .Tile {
-				j.r_value = .Exploded
-			}
-			if j.nr_value == .Flag do bombs += 1
-			if j.revealed && j.r_value != .Bomb && j.r_value != .Exploded do clear += 1
-		}
+winOrLose :: proc(game_data: ^GameData, tile: ^TileInfo) {
+	// Lose
+	if tile.revealed && tile.r_value == .Bomb {
+		game_data.game_over = true // fail condition
 	}
 
-	if clear == ROWS * COLS - BOMBS {
+	// Win
+	if !game_data.game_over && len(game_data.revealed) >= ROWS * COLS - BOMBS {
 		game_data.game_over = true
 		game_data.victory = true
 	}
 
-	game_data.bombs_left = BOMBS - bombs
+	if game_data.victory {
+		game_data.bombs_left = 0
+		for &i in grid {
+			for &j in i {
+				if j.r_value == .Bomb do j.nr_value = .Flag
+			}
+		}
+	} else {
+		if game_data.game_over &&
+		   tile.r_value == .Bomb &&
+		   tile.revealed &&
+		   tile.nr_value == .Tile {
+			tile.r_value = .Exploded
+		}
+	}
 }
 
 /*******************************************************************************************
@@ -584,3 +591,8 @@ printGridVals :: proc(mat: [ROWS][COLS]TileInfo) {
 		fmt.println(" ]")
 	}
 }
+
+posToNum :: proc(pos: [2]int) -> int {
+	return (pos.x * 16) + pos.y
+}
+
