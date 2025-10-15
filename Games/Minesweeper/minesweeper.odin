@@ -2,8 +2,8 @@ package minesweeper
 
 /*******************************************************************************************
 *
-*   Minesweeper (16x16)
-*   Sample game ported to Odin based off the Microsoft game. 
+*                                     Minesweeper (16x16)
+*                    Sample game ported to Odin based off the Microsoft game. 
 *
 ********************************************************************************************/
 
