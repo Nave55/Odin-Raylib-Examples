@@ -16,11 +16,49 @@ import "core:slice"
 import "core:time"
 import rl "vendor:raylib"
 
-// enum for tile markings
-Mark :: enum {
-	Clear,
+NonRevealedValues :: enum u8 {
+	Tile,
 	Flag,
 	Question,
+	Bad_Marked,
+}
+
+RevealedValues :: enum u8 {
+	Bomb,
+	Exploded,
+	Clear,
+	One,
+	Two,
+	Three,
+	Four,
+	Five,
+	Six,
+	Seven,
+	Eight,
+}
+
+Textures :: enum u8 {
+	Tile,
+	Flag,
+	Question,
+	Board,
+	Bad_Marked,
+	Exploded,
+	Bomb,
+	Clear,
+	One,
+	Two,
+	Three,
+	Four,
+	Five,
+	Six,
+	Seven,
+	Eight,
+	Smile,
+	Frown,
+	Surprise,
+	Sunglasses,
+	Smile_Clear,
 }
 
 // struct which makes up the grid
@@ -28,8 +66,8 @@ TileInfo :: struct {
 	using rect: rl.Rectangle,
 	grid_pos:   [2]int,
 	revealed:   bool,
-	value:      int,
-	mark:       Mark,
+	r_value:    RevealedValues,
+	nr_value:   NonRevealedValues,
 }
 
 // Game Data to be passed to functions
@@ -40,8 +78,7 @@ GameData :: struct {
 	victory:    bool,
 	stopwatch:  time.Stopwatch,
 	visited:    map[[2]int]struct {},
-	int_map:    map[int]rl.Texture2D,
-	enum_map:   map[Mark]rl.Texture2D,
+	tile_map:   map[Textures]rl.Texture2D,
 }
 
 // global constants
@@ -52,6 +89,36 @@ ROWS :: 16
 TILES :: COLS * ROWS
 TILE_SIZE :: 40
 BOMBS :: 40
+TIMER_RECT :: rl.Rectangle{SCREEN_WIDTH - 135, 30, 100, 50}
+BOMB_TRACKER_RECT :: rl.Rectangle{30, 30, 100, 50}
+
+@(rodata)
+int_to_revealed_value := [9]RevealedValues {
+	.Clear,
+	.One,
+	.Two,
+	.Three,
+	.Four,
+	.Five,
+	.Six,
+	.Seven,
+	.Eight,
+}
+
+@(rodata)
+Revealed_Values_To_Textures := [RevealedValues]Textures {
+	.Bomb     = .Bomb,
+	.Exploded = .Exploded,
+	.Clear    = .Clear,
+	.One      = .One,
+	.Two      = .Two,
+	.Three    = .Three,
+	.Four     = .Four,
+	.Five     = .Five,
+	.Six      = .Six,
+	.Seven    = .Seven,
+	.Eight    = .Eight,
+}
 
 // grid 
 grid: [ROWS][COLS]TileInfo
@@ -59,7 +126,7 @@ grid: [ROWS][COLS]TileInfo
 // main proc
 main :: proc() {
 	arena: vm.Arena
-	err := vm.arena_init_static(&arena, 4 * mem.Kilobyte)
+	err := vm.arena_init_static(&arena, 100 * mem.Kilobyte)
 	assert(err == .None)
 	arena_allocator := vm.arena_allocator(&arena)
 	defer vm.arena_destroy(&arena)
@@ -86,9 +153,8 @@ initGameData :: proc(arena_allocator: mem.Allocator) -> GameData {
 		0,
 		false,
 		{},
-		make(map[[2]int]struct {}, 100, context.temp_allocator),
-		make(map[int]rl.Texture2D, arena_allocator),
-		make(map[Mark]rl.Texture2D, arena_allocator),
+		make(map[[2]int]struct {}, 100, arena_allocator),
+		make(map[Textures]rl.Texture2D, 21, arena_allocator),
 	}
 
 	return game_data
@@ -121,7 +187,7 @@ drawGame :: proc(game_data: ^GameData) {
 	rl.BeginDrawing()
 	defer rl.EndDrawing()
 
-	rl.DrawTexture(game_data.int_map[-4], 0, 0, 255)
+	rl.DrawTexture(game_data.tile_map[.Board], 0, 0, 255)
 	drawTextures(game_data)
 	drawBombTracker(game_data^)
 	drawTimer(game_data)
@@ -144,8 +210,8 @@ initalizeGrid :: proc() {
 				{f32(c_ind * TILE_SIZE) + 21, f32(r_ind * TILE_SIZE) + 116, TILE_SIZE, TILE_SIZE},
 				{r_ind, c_ind},
 				false,
-				0,
 				.Clear,
+				.Tile,
 			}
 		}
 	}
@@ -162,11 +228,10 @@ setGridVals :: proc(pos: [2]int) {
 		val := rl.GetRandomValue(0, TILES - 1)
 		for val == num do val = rl.GetRandomValue(0, TILES - 1) // make sure bomb location isn't same as player
 		x[val] = {}
-		setGridPosFromNum(val, -1) // set bomb tiles to -1 
+		setTileRevealedValFromNum(val, .Bomb)
 	}
 
 	setTileVals(&grid)
-	printGridVals(grid)
 }
 
 // Controls
@@ -176,6 +241,7 @@ setGridVals :: proc(pos: [2]int) {
 unveilTile :: proc(game_data: ^GameData) {
 	m_pos := rl.GetMousePosition()
 	t_pos := getTilePos(m_pos)
+
 	if inBounds(t_pos, ROWS, COLS) {
 		if game_data.first_move {
 			game_data.first_move = false
@@ -183,10 +249,9 @@ unveilTile :: proc(game_data: ^GameData) {
 			time.stopwatch_start(&game_data.stopwatch)
 		}
 		val := fetchVal(&grid, t_pos)
-		if val.mark == .Clear {
+		if val.nr_value == .Tile {
 			dfs(&grid, t_pos, &game_data.visited)
-
-			if val.revealed && val.value == -1 do game_data.game_over = true
+			if val.revealed && val.r_value == .Bomb do game_data.game_over = true
 		}
 	}
 }
@@ -211,13 +276,15 @@ markTile :: proc() {
 	if inBounds(t_pos, ROWS, COLS) {
 		val := fetchVal(&grid, t_pos)
 		if !val.revealed {
-			switch val.mark {
-			case .Clear:
-				val.mark = .Flag
+			#partial switch val.nr_value {
+			case .Tile:
+				val.nr_value = .Flag
 			case .Flag:
-				val.mark = .Question
+				val.nr_value = .Question
 			case .Question:
-				val.mark = .Clear
+				val.nr_value = .Tile
+			case:
+				panic("Wrong Enum in MarkTile")
 			}
 		}
 	}
@@ -239,16 +306,16 @@ bombsAndVictory :: proc(game_data: ^GameData) {
 	bombs: i32 = 0
 	for &i in grid {
 		for &j in i {
-			if game_data.victory && j.value == -1 do j.mark = .Flag
+			if game_data.victory && j.r_value == .Bomb do j.nr_value = .Flag
 			if !game_data.victory &&
 			   game_data.game_over &&
-			   j.value == -1 &&
+			   j.r_value == .Bomb &&
 			   j.revealed &&
-			   j.mark == .Clear {
-				j.value -= 1
+			   j.nr_value == .Tile {
+				j.r_value = .Exploded
 			}
-			if j.mark == .Flag do bombs += 1
-			if j.revealed && j.value >= 0 do clear += 1
+			if j.nr_value == .Flag do bombs += 1
+			if j.revealed && j.r_value != .Bomb && j.r_value != .Exploded do clear += 1
 		}
 	}
 
@@ -262,103 +329,102 @@ bombsAndVictory :: proc(game_data: ^GameData) {
 
 // Load all textures
 loadTextures :: proc(game_data: ^GameData) {
-	game_data.enum_map[.Clear] = rl.LoadTexture("textures/tile.png")
-	game_data.enum_map[.Flag] = rl.LoadTexture("textures/flag.png")
-	game_data.enum_map[.Question] = rl.LoadTexture("textures/question.png")
-	game_data.int_map[-4] = rl.LoadTexture("textures/board.png")
-	game_data.int_map[-3] = rl.LoadTexture("textures/bad_marked.png")
-	game_data.int_map[-2] = rl.LoadTexture("textures/exploded.png")
-	game_data.int_map[-1] = rl.LoadTexture("textures/bomb.png")
-	game_data.int_map[0] = rl.LoadTexture("textures/clear.png")
-	game_data.int_map[1] = rl.LoadTexture("textures/one.png")
-	game_data.int_map[2] = rl.LoadTexture("textures/two.png")
-	game_data.int_map[3] = rl.LoadTexture("textures/three.png")
-	game_data.int_map[4] = rl.LoadTexture("textures/four.png")
-	game_data.int_map[5] = rl.LoadTexture("textures/five.png")
-	game_data.int_map[6] = rl.LoadTexture("textures/six.png")
-	game_data.int_map[7] = rl.LoadTexture("textures/seven.png")
-	game_data.int_map[8] = rl.LoadTexture("textures/eight.png")
-	game_data.int_map[9] = rl.LoadTexture("textures/smile.png")
-	game_data.int_map[10] = rl.LoadTexture("textures/frown.png")
-	game_data.int_map[11] = rl.LoadTexture("textures/surprise.png")
-	game_data.int_map[12] = rl.LoadTexture("textures/sunglasses.png")
-	game_data.int_map[13] = rl.LoadTexture("textures/smile_clear.png")
+	game_data.tile_map[.Tile] = rl.LoadTexture("textures/tile.png")
+	game_data.tile_map[.Flag] = rl.LoadTexture("textures/flag.png")
+	game_data.tile_map[.Question] = rl.LoadTexture("textures/question.png")
+	game_data.tile_map[.Board] = rl.LoadTexture("textures/board.png")
+	game_data.tile_map[.Bad_Marked] = rl.LoadTexture("textures/bad_marked.png")
+	game_data.tile_map[.Exploded] = rl.LoadTexture("textures/exploded.png")
+	game_data.tile_map[.Bomb] = rl.LoadTexture("textures/bomb.png")
+	game_data.tile_map[.Clear] = rl.LoadTexture("textures/clear.png")
+	game_data.tile_map[.One] = rl.LoadTexture("textures/one.png")
+	game_data.tile_map[.Two] = rl.LoadTexture("textures/two.png")
+	game_data.tile_map[.Three] = rl.LoadTexture("textures/three.png")
+	game_data.tile_map[.Four] = rl.LoadTexture("textures/four.png")
+	game_data.tile_map[.Five] = rl.LoadTexture("textures/five.png")
+	game_data.tile_map[.Six] = rl.LoadTexture("textures/six.png")
+	game_data.tile_map[.Seven] = rl.LoadTexture("textures/seven.png")
+	game_data.tile_map[.Eight] = rl.LoadTexture("textures/eight.png")
+	game_data.tile_map[.Smile] = rl.LoadTexture("textures/smile.png")
+	game_data.tile_map[.Frown] = rl.LoadTexture("textures/frown.png")
+	game_data.tile_map[.Surprise] = rl.LoadTexture("textures/surprise.png")
+	game_data.tile_map[.Sunglasses] = rl.LoadTexture("textures/sunglasses.png")
+	game_data.tile_map[.Smile_Clear] = rl.LoadTexture("textures/smile_clear.png")
 }
+
 
 // Draw Textures
 drawTextures :: proc(game_data: ^GameData) {
 	for &i in grid {
-		for &j in i {
-			drawEnumMapTiles(&j, game_data)
-			drawIntMapTiles(&j, game_data)
-		}
+		for &j in i do drawMapTiles(&j, game_data)
 	}
 	drawFaces(game_data)
 }
 
-// Draw Everything that's not revealed
-drawEnumMapTiles :: proc(j: ^TileInfo, game_data: ^GameData) {
+// Draw All Map Tiles
+drawMapTiles :: proc(j: ^TileInfo, game_data: ^GameData) {
 	if !j.revealed {
-		switch j.mark {
-		case .Clear:
+		#partial switch j.nr_value {
+		case .Tile:
 			if j.grid_pos == hoverTile() && !game_data.game_over {
-				rl.DrawTexture(game_data.int_map[0], i32(j.x), i32(j.y), 255)
+				rl.DrawTexture(game_data.tile_map[.Clear], i32(j.x), i32(j.y), 255)
 			} else {
-				rl.DrawTexture(game_data.enum_map[.Clear], i32(j.x), i32(j.y), 255)
+				rl.DrawTexture(game_data.tile_map[.Tile], i32(j.x), i32(j.y), 255)
 
 			}
 		case .Flag:
-			if game_data.game_over && j.value != -1 {
-				rl.DrawTexture(game_data.int_map[-3], i32(j.x), i32(j.y), 255)
+			if game_data.game_over && j.r_value != .Bomb {
+				rl.DrawTexture(game_data.tile_map[.Bad_Marked], i32(j.x), i32(j.y), 255)
 			} else {
-				rl.DrawTexture(game_data.enum_map[.Flag], i32(j.x), i32(j.y), 255)
+				rl.DrawTexture(game_data.tile_map[.Flag], i32(j.x), i32(j.y), 255)
 
 			}
 		case .Question:
-			rl.DrawTexture(game_data.enum_map[.Question], i32(j.x), i32(j.y), 255)
+			rl.DrawTexture(game_data.tile_map[.Question], i32(j.x), i32(j.y), 255)
+		case:
+			panic("Wrong Enum in drawEnumMapTiles")
 		}
 
-		if !game_data.victory && game_data.game_over && j.value == -1 && j.mark != .Flag {
-			rl.DrawTexture(game_data.int_map[-1], i32(j.x), i32(j.y), 255)
+		if !game_data.victory && game_data.game_over && j.r_value == .Bomb && j.nr_value != .Flag {
+			rl.DrawTexture(game_data.tile_map[.Bomb], i32(j.x), i32(j.y), 255)
 		}
-	}
-}
+	} else {
+		rl.DrawTexture(
+			game_data.tile_map[Revealed_Values_To_Textures[j.r_value]],
+			i32(j.x),
+			i32(j.y),
+			255,
+		)
 
-// Draw Everyting revealed
-drawIntMapTiles :: proc(j: ^TileInfo, game_data: ^GameData) {
-	if j.revealed {
-		rl.DrawTexture(game_data.int_map[j.value], i32(j.x), i32(j.y), 255)
 	}
 }
 
 // Draw Faces
 drawFaces :: proc(game_data: ^GameData) {
 	if !game_data.game_over {
-		tile := hoverTile()
-		if tile.x >= 0 && tile.y >= 0 && tile.x <= 15 && tile.y <= 15 {
-			rl.DrawTexture(game_data.int_map[11], 300, 20, 255)
-		} else do rl.DrawTexture(game_data.int_map[9], 300, 20, 255)
+		if inBounds(hoverTile(), ROWS, COLS) {
+			rl.DrawTexture(game_data.tile_map[.Surprise], 300, 20, 255)
+		} else do rl.DrawTexture(game_data.tile_map[.Smile], 300, 20, 255)
 	} else {
-		if !game_data.victory do rl.DrawTexture(game_data.int_map[10], 300, 20, 255)
-		else do rl.DrawTexture(game_data.int_map[12], 300, 20, 255)
+		if !game_data.victory do rl.DrawTexture(game_data.tile_map[.Frown], 300, 20, 255)
+		else do rl.DrawTexture(game_data.tile_map[.Sunglasses], 300, 20, 255)
 	}
 
 	if rl.IsMouseButtonDown(.LEFT) {
-		if hoverSmiley() do rl.DrawTexture(game_data.int_map[13], 300, 20, 255)
+		if hoverSmiley() do rl.DrawTexture(game_data.tile_map[.Smile_Clear], 300, 20, 255)
 	}
 }
 
 // Draw Bomb Tracker
 drawBombTracker :: proc(game_data: GameData) {
-	rect: rl.Rectangle = {30, 30, 100, 50}
-
-	rl.DrawRectangleRec(rect, rl.BLACK)
+	@(static) rect_draw_width := i32(BOMB_TRACKER_RECT.x + BOMB_TRACKER_RECT.width / 2)
+	@(static) rect_draw_height := i32(BOMB_TRACKER_RECT.y + 10)
+	rl.DrawRectangleRec(BOMB_TRACKER_RECT, rl.BLACK)
 
 	rl.DrawText(
 		rl.TextFormat("%v", game_data.bombs_left),
-		i32(rect.x + rect.width / 2) -
-		rl.MeasureText(rl.TextFormat("%v", game_data.bombs_left), 40) / 2,
-		i32(rect.y + 10),
+		rect_draw_width - rl.MeasureText(rl.TextFormat("%v", game_data.bombs_left), 40) / 2,
+		rect_draw_height,
 		40,
 		rl.RED,
 	)
@@ -366,16 +432,16 @@ drawBombTracker :: proc(game_data: GameData) {
 
 // Draw Timer
 drawTimer :: proc(game_data: ^GameData) {
+	@(static) rect_draw_width := i32(TIMER_RECT.x + TIMER_RECT.width / 2)
+	@(static) rect_draw_height := i32(TIMER_RECT.y + 10)
+	rl.DrawRectangleRec(TIMER_RECT, rl.BLACK)
+
 	hr, min, sec := time.clock_from_stopwatch(game_data.stopwatch)
 	ttl := (hr * 60 * 60) + (min * 60) + sec
-	rect: rl.Rectangle = {SCREEN_WIDTH - 135, 30, 100, 50}
-
-	rl.DrawRectangleRec(rect, rl.BLACK)
-
 	rl.DrawText(
 		rl.TextFormat("%v", ttl),
-		i32(rect.x + rect.width / 2) - rl.MeasureText(rl.TextFormat("%v", ttl), 40) / 2,
-		i32(rect.y + 10),
+		rect_draw_width - rl.MeasureText(rl.TextFormat("%v", ttl), 40) / 2,
+		rect_draw_height,
 		40,
 		rl.RED,
 	)
@@ -423,13 +489,13 @@ nbrs :: proc(
 // Prints Grid To Console if you want to verify values.
 printGridVals :: proc(mat: [ROWS][COLS]TileInfo) {
 	for i in mat {
-		fmt.print("[")
+		fmt.print("[ ")
 		for j, ind in i {
-			if ind % 15 != 0 || ind == 0 do fmt.printf("%v, ", j.value)
-			else do fmt.print(j.value)
+			if ind % 15 != 0 || ind == 0 do fmt.printf("%v, ", j.r_value)
+			else do fmt.print(j.r_value)
 		}
 
-		fmt.print("]\n")
+		fmt.println(" ]")
 	}
 }
 
@@ -442,10 +508,10 @@ getTilePos :: proc(pos: rl.Vector2) -> [2]int {
 }
 
 // takes a tile number and a val and then sets the tile value to that val
-setGridPosFromNum :: proc(num: i32, val_to_set: int) {
+setTileRevealedValFromNum :: proc(num: i32, val: RevealedValues) {
 	row := i32(math.floor(f32(num) / ROWS))
 	col := num % COLS
-	grid[row][col].value = val_to_set
+	grid[row][col].r_value = val
 
 	return
 }
@@ -455,16 +521,16 @@ setTileVals :: proc(mat: ^[ROWS][COLS]TileInfo) {
 	defer free_all(context.temp_allocator)
 	for &i, c_ind in mat {
 		for &j, r_ind in i {
-			if j.value != -1 {
+			if j.r_value != .Bomb {
 				_, vals := nbrs(mat, {c_ind, r_ind})
 				filt := len(
 					slice.filter(
 						sa.slice(&vals),
-						proc(tile: ^TileInfo) -> bool {return tile.value == -1},
+						proc(tile: ^TileInfo) -> bool {return tile.r_value == .Bomb},
 						context.temp_allocator,
 					),
 				)
-				j.value = filt
+				j.r_value = int_to_revealed_value[filt]
 			}
 		}
 	}
@@ -480,17 +546,18 @@ dfs :: proc(mat: ^[ROWS][COLS]TileInfo, pos: [2]int, mp: ^map[[2]int]struct {}) 
 	val := fetchVal(mat, pos)
 
 	val.revealed = true
-	val.mark = .Clear
-	if val.value != 0 || pos in mp do return
+	// val.nr_value = .Tile
+	if val.r_value != .Clear || pos in mp do return
 
 	mp[pos] = {}
 
 	inds, _ := nbrs(mat, pos)
 	for i in sa.slice(&inds) {
 		b := fetchVal(mat, i)
-		if b.value > 0 {
+		#partial switch b.r_value {
+		case .One, .Two, .Three, .Four, .Five, .Six, .Seven, .Eight:
 			b.revealed = true
-			b.mark = .Clear
+			b.nr_value = .Tile
 		}
 
 		dfs(mat, i, mp)
