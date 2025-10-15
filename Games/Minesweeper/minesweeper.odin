@@ -421,7 +421,6 @@ winOrLose :: proc(game_data: ^GameData, tile: ^TileInfo) {
 	if tile.revealed && tile.r_value == .Bomb {
 		game_data.game_over = true // fail condition
 	}
-
 	// Win
 	if !game_data.game_over && len(game_data.revealed) >= ROWS * COLS - BOMBS {
 		game_data.game_over = true
@@ -599,4 +598,3 @@ printGridVals :: proc(mat: [ROWS][COLS]TileInfo) {
 posToNum :: proc(pos: [2]int) -> int {
 	return (pos.x * 16) + pos.y
 }
-
