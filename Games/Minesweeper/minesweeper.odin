@@ -92,6 +92,7 @@ BOMBS :: 40
 TIMER_RECT :: rl.Rectangle{SCREEN_WIDTH - 135, 30, 100, 50}
 BOMB_TRACKER_RECT :: rl.Rectangle{30, 30, 100, 50}
 FACE_LOC :: rl.Vector2{336, 56}
+FACE_SIZE :: 72
 
 @(rodata)
 int_to_revealed_value := [9]RevealedValues {
@@ -399,10 +400,12 @@ markTile :: proc() {
 // Checks if hovering over smiley face
 @(require_results)
 hoverSmiley :: proc() -> bool {
+	@(static) h_face_size: f32 = FACE_SIZE / 2
+
 	m_pos := rl.GetMousePosition()
 	x_pos := abs(FACE_LOC.x - m_pos.x)
 	y_pos := abs(FACE_LOC.y - m_pos.y)
-	return x_pos <= 36 && y_pos <= 36
+	return x_pos < h_face_size && y_pos < h_face_size
 }
 
 /*******************************************************************************************
@@ -581,4 +584,3 @@ printGridVals :: proc(mat: [ROWS][COLS]TileInfo) {
 		fmt.println(" ]")
 	}
 }
-
