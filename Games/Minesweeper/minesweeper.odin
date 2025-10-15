@@ -302,24 +302,17 @@ getTilePos :: proc(pos: rl.Vector2) -> [2]int {
 
 // If you click a tile it will run a dfs to see what tiles should be revealed
 dfs :: proc(mat: ^[ROWS][COLS]TileInfo, pos: [2]int, game_data: ^GameData) {
-	val := fetchVal(mat, pos)
+	game_data.revealed[posToNum(pos)] = {}
 
+	val := fetchVal(mat, pos)
 	val.revealed = true
 	val.nr_value = .Tile
-
-	#partial switch val.r_value {
-	case .Clear, .One, .Two, .Three, .Four, .Five, .Six, .Seven, .Eight:
-		game_data.revealed[posToNum(pos)] = {}
-	}
 
 	if val.r_value != .Clear || pos in game_data.visited do return
 	game_data.visited[pos] = {}
 
 	inds, _ := nbrs(mat, pos)
-	for i in sa.slice(&inds) {
-		b := fetchVal(mat, i)
-		dfs(mat, i, game_data)
-	}
+	for i in sa.slice(&inds) do dfs(mat, i, game_data)
 }
 
 // takes a tile number and a val and then sets r_value to that val
@@ -560,12 +553,20 @@ nbrs :: proc(
 	inds: sa.Small_Array(8, [2]int),
 	vals: sa.Small_Array(8, ^TileInfo),
 ) {
-	width, height := len(mat[0]), len(mat)
-	dirs: [8][2]int = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}}
+	@(static) dirs: [8][2]int = {
+		{-1, -1},
+		{-1, 0},
+		{-1, 1},
+		{0, -1},
+		{0, 1},
+		{1, -1},
+		{1, 0},
+		{1, 1},
+	}
 
-	for val in dirs {
+	for &val in dirs {
 		n_pos := pos + val
-		if inBounds(n_pos, width, height) {
+		if inBounds(n_pos, ROWS, COLS) {
 			sa.append(&inds, n_pos)
 			sa.append(&vals, fetchVal(mat, n_pos))
 		}
