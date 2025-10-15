@@ -64,22 +64,25 @@ Textures :: enum u8 {
 // struct which makes up the grid
 TileInfo :: struct {
 	using rect: rl.Rectangle,
-	grid_pos:   [2]int,
-	revealed:   bool,
-	r_value:    RevealedValues,
-	nr_value:   NonRevealedValues,
+	grid_pos:   [2]int, // x,y pos for tile on 2d grid
+	revealed:   bool, // if the tile has been revealed
+	r_value:    RevealedValues, // what the tile is showing if revealed
+	nr_value:   NonRevealedValues, // what the tile is showing if not revealed
 }
 
 // Game Data to be passed to functions
 GameData :: struct {
-	game_over:  bool,
-	first_move: bool,
-	bombs_left: i32,
-	victory:    bool,
-	stopwatch:  time.Stopwatch,
-	visited:    map[[2]int]struct {},
-	revealed:   map[int]struct {},
-	tile_map:   map[Textures]rl.Texture2D,
+	game_over:     bool, // tracks if the game is over
+	first_move:    bool, // tracks if you are on first move
+	victory:       bool, // tracks if you won the game
+	cheat:         bool, // tracks if you are pressing 's' to cheat
+	l_button_down: bool, // tracks if left mouse button down
+	bombs_left:    i32, // amt of bomb remaining
+	m_pos:         [2]f32, // mouse position 
+	stopwatch:     time.Stopwatch, // time
+	visited:       map[[2]int]struct {}, // set to check for empty tiles revealed
+	revealed:      map[int]struct {}, // all revealed tiles
+	tile_map:      map[Textures]rl.Texture2D, // stores all textures
 }
 
 // global constants
@@ -153,14 +156,19 @@ main :: proc() {
 
 // main control proc. calls other small control procs
 controls :: proc(game_data: ^GameData, arena: ^vm.Arena) {
+	game_data.m_pos = rl.GetMousePosition()
+
+	if rl.IsMouseButtonDown(.LEFT) do game_data.l_button_down = true
 	if rl.IsMouseButtonReleased(.LEFT) {
+		game_data.l_button_down = false
 		if !game_data.game_over do unveilTile(game_data)
-		if hoverSmiley() do initGame(game_data)
+		if hoverSmiley(game_data.m_pos) do initGame(game_data)
 	}
 
-	if rl.IsMouseButtonReleased(.RIGHT) {
-		if !game_data.game_over do markTile(game_data)
-	}
+	if rl.IsMouseButtonReleased(.RIGHT) && !game_data.game_over do markTile(game_data)
+
+	if rl.IsKeyDown(.S) do game_data.cheat = true
+	if rl.IsKeyReleased(.S) do game_data.cheat = false
 }
 
 // main draw call
@@ -217,8 +225,11 @@ initGameData :: proc(arena_allocator: mem.Allocator) -> GameData {
 	game_data := GameData {
 		false,
 		true,
-		BOMBS,
 		false,
+		false,
+		false,
+		BOMBS,
+		{-1, -1},
 		{},
 		make(map[[2]int]struct {}, 100, arena_allocator),
 		make(map[int]struct {}, ROWS * COLS - BOMBS, arena_allocator),
@@ -251,7 +262,10 @@ initGame :: proc(game_data: ^GameData) {
 	game_data.first_move = true
 	game_data.game_over = false
 	game_data.victory = false
+	game_data.l_button_down = false
+	game_data.cheat = false
 	game_data.bombs_left = BOMBS
+	game_data.m_pos = {-1, -1}
 	time.stopwatch_reset(&game_data.stopwatch)
 	initalizeGrid()
 }
@@ -349,7 +363,7 @@ setTileVals :: proc(mat: ^[ROWS][COLS]TileInfo) {
 
 // Reveal tile 
 unveilTile :: proc(game_data: ^GameData) {
-	t_pos := getTilePos(rl.GetMousePosition())
+	t_pos := getTilePos(game_data.m_pos)
 
 	if inBounds(t_pos, ROWS, COLS) {
 		if game_data.first_move {
@@ -368,17 +382,15 @@ unveilTile :: proc(game_data: ^GameData) {
 
 // Returns a tile pos if you are hovering a tile that hasn't been revealed
 @(require_results)
-hoverTile :: proc() -> (t_pos: [2]int) {
-	if rl.IsMouseButtonDown(.LEFT) {
-		t_pos = getTilePos(rl.GetMousePosition())
-		if inBounds(t_pos, ROWS, COLS) && !fetchVal(&grid, t_pos).revealed do return
-	}
-	return {-1, -1}
+hoverTile :: proc(m_pos: [2]f32, compare: [2]int) -> bool {
+	t_pos := getTilePos(m_pos)
+	if inBounds(t_pos, ROWS, COLS) && !fetchVal(&grid, t_pos).revealed && t_pos == compare do return true
+	return false
 }
 
 // If right click release cycle through tile, bomb, and question enum.
 markTile :: proc(game_data: ^GameData) {
-	t_pos := getTilePos(rl.GetMousePosition())
+	t_pos := getTilePos(game_data.m_pos)
 	if inBounds(t_pos, ROWS, COLS) {
 		val := fetchVal(&grid, t_pos)
 		if !val.revealed {
@@ -400,10 +412,9 @@ markTile :: proc(game_data: ^GameData) {
 
 // Checks if hovering over smiley face
 @(require_results)
-hoverSmiley :: proc() -> bool {
+hoverSmiley :: proc(m_pos: [2]f32) -> bool {
 	@(static) h_face_size: f32 = FACE_SIZE / 2
 
-	m_pos := rl.GetMousePosition()
 	x_pos := abs(FACE_LOC.x - m_pos.x)
 	y_pos := abs(FACE_LOC.y - m_pos.y)
 	return x_pos < h_face_size && y_pos < h_face_size
@@ -450,60 +461,65 @@ winOrLose :: proc(game_data: ^GameData, tile: ^TileInfo) {
 *
 ********************************************************************************************/
 
-// Draw All Map Tiles
-drawMapTiles :: proc(j: ^TileInfo, game_data: ^GameData) {
-	x, y := i32(j.x), i32(j.y)
-
+// returns what appearance a tile should have
+tileToShow :: proc(j: ^TileInfo, game_data: ^GameData) -> (tile: rl.Texture2D) {
 	if !j.revealed {
 		#partial switch j.nr_value {
 		case .Tile:
-			if j.grid_pos == hoverTile() && !game_data.game_over {
-				rl.DrawTexture(game_data.tile_map[.Clear], x, y, 255)
-			} else {
-				rl.DrawTexture(game_data.tile_map[.Tile], x, y, 255)
-
+			tile = game_data.tile_map[.Tile]
+			if hoverTile(game_data.m_pos, j.grid_pos) && !game_data.game_over {
+				if game_data.l_button_down do tile = game_data.tile_map[.Clear]
+				if game_data.cheat {
+					tile = game_data.tile_map[Revealed_Values_To_Textures[j.r_value]]
+				}
 			}
 		case .Flag:
 			if game_data.game_over && j.r_value != .Bomb {
-				rl.DrawTexture(game_data.tile_map[.Bad_Marked], x, y, 255)
+				tile = game_data.tile_map[.Bad_Marked]
 			} else {
-				rl.DrawTexture(game_data.tile_map[.Flag], x, y, 255)
-
+				tile = game_data.tile_map[.Flag]
 			}
 		case .Question:
-			rl.DrawTexture(game_data.tile_map[.Question], x, y, 255)
+			tile = game_data.tile_map[.Question]
 		case:
 			panic("Wrong Enum in drawEnumMapTiles")
 		}
 
 		if !game_data.victory && game_data.game_over && j.r_value == .Bomb && j.nr_value != .Flag {
-			rl.DrawTexture(game_data.tile_map[.Bomb], x, y, 255)
+			tile = game_data.tile_map[.Bomb]
 		}
-	} else do rl.DrawTexture(game_data.tile_map[Revealed_Values_To_Textures[j.r_value]], x, y, 255)
+	} else do tile = game_data.tile_map[Revealed_Values_To_Textures[j.r_value]]
+
+	return tile
+}
+
+// returns what face should be showing up
+faceToShow :: proc(game_data: ^GameData) -> (face: rl.Texture2D) {
+	if !game_data.game_over {
+		if hoverTile(game_data.m_pos, {ROWS, COLS}) && game_data.l_button_down {
+			face = game_data.tile_map[.Surprise]
+		} else do face = game_data.tile_map[.Smile]
+	} else {
+		if !game_data.victory do face = game_data.tile_map[.Frown]
+		else do face = game_data.tile_map[.Sunglasses]
+	}
+
+	if game_data.l_button_down && hoverSmiley(game_data.m_pos) {
+		face = game_data.tile_map[.Smile_Clear]
+	}
+
+	return face
 }
 
 // Draw Textures
 drawTextures :: proc(game_data: ^GameData) {
 	for &i in grid {
-		for &j in i do drawMapTiles(&j, game_data)
+		for &j in i {
+			tile := tileToShow(&j, game_data)
+			rl.DrawTexture(tile, i32(j.x), i32(j.y), 255)
+		}
 	}
-	drawFaces(game_data)
-}
-
-// Draw Faces
-drawFaces :: proc(game_data: ^GameData) {
-	if !game_data.game_over {
-		if inBounds(hoverTile(), ROWS, COLS) {
-			rl.DrawTexture(game_data.tile_map[.Surprise], 300, 20, 255)
-		} else do rl.DrawTexture(game_data.tile_map[.Smile], 300, 20, 255)
-	} else {
-		if !game_data.victory do rl.DrawTexture(game_data.tile_map[.Frown], 300, 20, 255)
-		else do rl.DrawTexture(game_data.tile_map[.Sunglasses], 300, 20, 255)
-	}
-
-	if rl.IsMouseButtonDown(.LEFT) {
-		if hoverSmiley() do rl.DrawTexture(game_data.tile_map[.Smile_Clear], 300, 20, 255)
-	}
+	rl.DrawTexture(faceToShow(game_data), 300, 20, 255)
 }
 
 // Draw Bomb Tracker
