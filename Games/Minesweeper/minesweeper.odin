@@ -462,6 +462,7 @@ winOrLose :: proc(game_data: ^GameData, tile: ^TileInfo) {
 ********************************************************************************************/
 
 // returns what appearance a tile should have
+@(require_results)
 tileToShow :: proc(j: ^TileInfo, game_data: ^GameData) -> (tile: rl.Texture2D) {
 	if !j.revealed {
 		#partial switch j.nr_value {
@@ -494,6 +495,7 @@ tileToShow :: proc(j: ^TileInfo, game_data: ^GameData) -> (tile: rl.Texture2D) {
 }
 
 // returns what face should be showing up
+@(require_results)
 faceToShow :: proc(game_data: ^GameData) -> (face: rl.Texture2D) {
 	if !game_data.game_over {
 		if hoverTile(game_data.m_pos, {ROWS, COLS}) && game_data.l_button_down {
@@ -614,3 +616,4 @@ printGridVals :: proc(mat: [ROWS][COLS]TileInfo) {
 posToNum :: proc(pos: [2]int) -> int {
 	return (pos.x * 16) + pos.y
 }
+
