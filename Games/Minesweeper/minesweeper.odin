@@ -97,6 +97,8 @@ TIMER_RECT :: rl.Rectangle{SCREEN_WIDTH - 135, 30, 100, 50}
 BOMB_TRACKER_RECT :: rl.Rectangle{30, 30, 100, 50}
 FACE_LOC :: rl.Vector2{336, 56}
 FACE_SIZE :: 72
+X_GRID_START :: 21
+Y_GRID_START :: 116
 
 @(rodata)
 int_to_revealed_value := [9]RevealedValues {
@@ -245,7 +247,12 @@ initalizeGrid :: proc() {
 	for &r_val, r_ind in grid {
 		for &c_val, c_ind in r_val {
 			c_val = {
-				{f32(c_ind * TILE_SIZE) + 21, f32(r_ind * TILE_SIZE) + 116, TILE_SIZE, TILE_SIZE},
+				{
+					f32(c_ind * TILE_SIZE) + X_GRID_START,
+					f32(r_ind * TILE_SIZE) + Y_GRID_START,
+					TILE_SIZE,
+					TILE_SIZE,
+				},
 				{r_ind, c_ind},
 				false,
 				.Clear,
@@ -308,9 +315,9 @@ fetchVal :: proc(mat: ^[ROWS][COLS]TileInfo, pos: [2]int) -> ^TileInfo {
 // Calculates tile pos in grid from a Vector2d
 @(require_results)
 getTilePos :: proc(pos: rl.Vector2) -> [2]int {
-	x_pos := int(math.floor((pos.x - 21) / TILE_SIZE))
-	y_pos := int(math.floor((pos.y - 116) / TILE_SIZE))
-	return {y_pos, x_pos}
+	row := int(math.floor((pos.y - Y_GRID_START) / TILE_SIZE))
+	col := int(math.floor((pos.x - X_GRID_START) / TILE_SIZE))
+	return {row, col}
 }
 
 // If you click a tile it will run a dfs to see what tiles should be revealed
@@ -370,6 +377,7 @@ unveilTile :: proc(game_data: ^GameData) {
 			initializeGridVals(t_pos) // set all r_values
 			time.stopwatch_start(&game_data.stopwatch)
 		}
+
 		// if nr_value is .Tile run dfs to see if tiles should be revealed
 		val := fetchVal(&grid, t_pos)
 		if val.nr_value == .Tile {
