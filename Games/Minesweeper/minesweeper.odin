@@ -313,7 +313,6 @@ getTilePos :: proc(pos: rl.Vector2) -> [2]int {
 	return {y_pos, x_pos}
 }
 
-
 // If you click a tile it will run a dfs to see what tiles should be revealed
 dfs :: proc(mat: ^[ROWS][COLS]TileInfo, pos: [2]int, game_data: ^GameData) {
 	game_data.revealed[posToNum(pos)] = {}
