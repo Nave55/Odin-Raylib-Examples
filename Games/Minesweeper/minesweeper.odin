@@ -77,7 +77,7 @@ GameData :: struct {
 	victory:       bool, // tracks if you won the game
 	cheat:         bool, // tracks if you are pressing 's' to cheat
 	l_button_down: bool, // tracks if left mouse button down
-	bombs_left:    i32, // amt of bomb remaining
+	bombs_left:    i32, // amt of bombs remaining
 	m_pos:         [2]f32, // mouse position 
 	stopwatch:     time.Stopwatch, // time
 	visited:       map[[2]int]struct {}, // set to check for empty tiles revealed
@@ -623,4 +623,5 @@ printGridVals :: proc(mat: [ROWS][COLS]TileInfo) {
 posToNum :: proc(pos: [2]int) -> int {
 	return (pos.x * 16) + pos.y
 }
+
 
